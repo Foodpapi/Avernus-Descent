@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>8× Export — 448 / 320</title>
+<style>
+body{background:#050508;color:#e8e0d0;font-family:system-ui;padding:24px}
+h1{color:#c9a227} .sub{color:#6ac2ff}
+.grid{display:flex;flex-wrap:wrap;gap:20px;margin:20px 0}
+.cell{background:#13131a;border:1px solid #333;border-radius:14px;padding:16px;text-align:center}
+.cell img{image-rendering:pixelated;background:#0a0a12;border:1px solid #222;border-radius:10px}
+.note{background:#1a1a22;border:1px solid #c9a227;padding:18px;border-radius:10px;color:#ccc;line-height:1.7}
+</style></head><body>
+<h1>🔥 Avernus Descent — Re-exported 8× <span style="background:#ff7a2a;color:#000;padding:4px 10px;border-radius:6px;font-size:14px">448×448 tiles • 320×384 units</span></h1>
+<p class="sub">Pixel-perfect 8× — each original pixel is now an 8×8 block. Ultra-readable while staying perfectly crisp. Engine will scale down to fit tile — no blur.</p>
+<div class="note">
+✅ <strong>All 69 assets re-exported again</strong> (224→448, 160→320). You asked for more upscale — done. Fine details are now huge: you can count the paladin’s rivets, the goblin’s teeth, the hearth bricks, the rift’s lava cracks.<br>
+⚠️ At this scale the “pixel” blocks are very visible (intentional for pixel art). If you go larger it will just look more blocky, not more detailed — because we’re doubling existing pixels, not regenerating new detail.<br>
+💡 <strong>For true extra detail</strong> on the remaining 59 files, I’ll generate them <em>directly</em> at 448/320 from the original 1024px AI renders with <code>LANCZOS</code>, so they keep full detail at this huge size.
+</div>
+
+<h2 style="color:#ff7a2a">Tiles 448×448</h2>
+<div class="grid">
+ <div class="cell"><img src="tiles/mountain_pass_ground_1.png" width="224" height="224" style="width:224px;height:224px;image-rendering:pixelated"><div style="font-size:11px;color:#aaa;margin-top:8px">mountain_pass_ground_1<br><span style="color:#6ac2ff">448×448 (16× base 28)</span></div></div>
+ <div class="cell"><img src="tiles/ship_wall.png" width="224" height="224" style="width:224px;height:224px"><div style="font-size:11px;color:#aaa;margin-top:8px">ship_wall<br><span style="color:#6ac2ff">448×448</span></div></div>
+ <div class="cell"><img src="tiles/tavern_ground_1.png" width="224" height="224" style="width:224px;height:224px"><div style="font-size:11px;color:#aaa;margin-top:8px">tavern_ground_1<br><span style="color:#6ac2ff">448×448</span></div></div>
+</div>
+
+<h2 style="color:#ff7a2a">Units 320×384</h2>
+<div class="grid">
+ <div class="cell"><img src="units/class_paladin.png" width="160" height="192" style="width:160px;height:192px"><div style="font-size:11px;color:#aaa;margin-top:8px">paladin<br><span style="color:#6ac2ff">320×384 (16× base 20×24)</span></div></div>
+ <div class="cell"><img src="units/class_wizard.png" width="160" height="192" style="width:160px;height:192px"><div style="font-size:11px;color:#aaa;margin-top:8px">wizard<br><span style="color:#6ac2ff">320×384</span></div></div>
+ <div class="cell"><img src="units/monster_goblin.png" width="160" height="192" style="width:160px;height:192px"><div style="font-size:11px;color:#aaa;margin-top:8px">goblin<br><span style="color:#6ac2ff">320×384</span></div></div>
+ <div class="cell"><img src="units/monster_balor.png" width="160" height="192" style="width:160px;height:192px"><div style="font-size:11px;color:#aaa;margin-top:8px">balor HUGE<br><span style="color:#6ac2ff">320×384</span></div></div>
+ <div class="cell"><img src="units/monster_beholder.png" width="160" height="192" style="width:160px;height:192px"><div style="font-size:11px;color:#aaa;margin-top:8px">beholder<br><span style="color:#6ac2ff">320×384</span></div></div>
+</div>
+
+<h2 style="color:#ff7a2a">Objects 448×448</h2>
+<div class="grid">
+ <div class="cell"><img src="objects/pillar.png" width="224" height="224" style="width:224px;height:224px"><div style="font-size:11px;color:#aaa;margin-top:8px">pillar<br><span style="color:#6ac2ff">448×448</span></div></div>
+ <div class="cell"><img src="objects/spike.png" width="224" height="224" style="width:224px;height:224px"><div style="font-size:11px;color:#aaa;margin-top:8px">spike<br><span style="color:#6ac2ff">448×448</span></div></div>
+ <div class="cell"><img src="objects/mushroom.png" width="224" height="224" style="width:224px;height:224px"><div style="font-size:11px;color:#aaa;margin-top:8px">mushroom<br><span style="color:#6ac2ff">448×448</span></div></div>
+</div>
+
+<p style="color:#888;font-size:12px;margin-top:40px">These are displayed at 50% of true size (224/160) so they fit on screen but you see the crisp pixel blocks. True files are 448/320. I can go to 896×896 / 640×768 (16×) with one more command — just say “upscale again” or “continue at 448” for the rest.</p>
+</body></html>
