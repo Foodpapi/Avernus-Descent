@@ -297,5 +297,32 @@ function deafen(u) {
   step('Passive Perception can break hide without LOS');
 }
 
+// ============ 15. Hidden overlay still paints fogged enemies on discovered tiles ============
+{
+  const rogue = Combat.makeUnit(mkChar('rogue', 'Sneak6', 'thief'), 'player', 3, 5);
+  rogue.vision = 8;
+  const foe = Combat.makeUnit(mkChar('fighter', 'Fogged', 'champion'), 'enemy', 10, 5);
+  foe.vision = 8;
+  deafen(foe);
+  const battle = battleOf([rogue, foe]);
+  battle.revealed = false;
+  wallColumn(battle, 6);
+  for (let y = 0; y < battle.h; y++) {
+    for (let x = 0; x < battle.w; x++) {
+      battle.grid[y][x].discovered = x <= 8;
+      battle.grid[y][x].visible = x <= 5;
+    }
+  }
+  Actions.tryHide(battle, rogue);
+  assert(rogue.hidden, 'hidden behind the wall');
+  assert(Combat.isHiddenUnit(rogue), 'isHiddenUnit matches Hidden status');
+  assert(!Combat.enemyVisible(battle, foe), 'foe itself is in fog');
+  const overlay = Combat.sightOverlayTiles(battle);
+  assert(overlay.length > 0, 'overlay still paints from a fogged enemy');
+  assert(overlay.every(t => battle.grid[t.y][t.x].discovered || battle.grid[t.y][t.x].visible), 'overlay stays on known tiles');
+  assert(!overlay.some(t => t.x === rogue.x && t.y === rogue.y), 'hider tile is not in the cone');
+  step('hidden overlay uses all enemies on discovered tiles');
+}
+
 console.log('hide_test: all good');
 process.exit(0);

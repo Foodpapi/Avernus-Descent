@@ -109,7 +109,7 @@ export const SUBCLASS_DESCRIPTIONS = {
 
 // Conditions, statuses and buffs — keyed by internal id.
 export const STATUS_DESCRIPTIONS = {
-  hidden: 'Hidden — you are unseen. Your next attack has advantage. You cannot hide while a foe can see you clearly (5e), unless Naturally Stealthy (behind a larger creature) or Mask of the Wild (foliage/mist) applies. Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Moving is fine until you are seen, heard, attack, or otherwise give yourself away.',
+  hidden: 'Hidden — you are unseen. Your next attack has advantage. While you are Hidden, enemy line of sight is painted in red so you can see which tiles would spot you. A green ring means you are unseen; amber means you stand in a cone but a racial trait still conceals you. You cannot hide while a foe can see you clearly (5e), unless Naturally Stealthy (behind a larger creature) or Mask of the Wild (foliage/mist) applies. Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Moving is fine until you are seen, heard, attack, or otherwise give yourself away.',
   dying: 'Dying — you are at 0 HP and bleeding out. Each of your turns you make a death saving throw: two successes stabilize you at 1 HP, two failures kill you. Any healing ends this immediately.',
   prone: 'Prone — you are on the ground. Attacks against you from melee have advantage; your own melee attacks have disadvantage. Standing up costs half your movement.',
   stunned: 'Stunned — you cannot act, move, or take reactions. Attacks against you have advantage.',

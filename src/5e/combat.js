@@ -424,6 +424,31 @@ export function isClearlySeen(combat, unit) {
   return whoCanSee(combat, unit).length > 0;
 }
 
+export function isHiddenUnit(u) {
+  return !!(u && (u.hidden || (u.statuses || []).some(s => s.id === 'hidden')));
+}
+
+// Tiles to paint while a player is Hidden: every living enemy's visual cone,
+// clipped to the map the party has already discovered (so ducking behind a
+// wall does not erase the overlay — that was the v=44 planning tool).
+export function sightOverlayTiles(combat) {
+  const out = [];
+  const seen = new Set();
+  if (!combat || !combat.units) return out;
+  for (const e of combat.units) {
+    if (e.team !== 'enemy' || e.dead || e.overboard || e.hp <= 0) continue;
+    for (const t of tilesSeenBy(combat, e)) {
+      const tile = combat.grid[t.y] && combat.grid[t.y][t.x];
+      if (!combat.revealed && tile && !tile.discovered && !tile.visible) continue;
+      const k = t.y * combat.w + t.x;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ x: t.x, y: t.y });
+    }
+  }
+  return out;
+}
+
 export function canHear(combat, observer, target) {
   if (!observer || !target) return false;
   if (observer.dead || observer.overboard || observer.hp <= 0) return false;

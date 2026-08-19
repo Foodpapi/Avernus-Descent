@@ -278,6 +278,10 @@ h3 { font-size: 18px; margin-top: 8px; }
 .hud-top { display: flex; flex-direction: column; gap: 6px; }
 .hud-loc { font-weight: bold; color: var(--gold-bright); font-size: 14px; }
 .hud-weather { font-size: 10.5px; color: var(--muted); }
+.hud-hide {
+  font-size: 11px; color: #ffb0a0; background: #3a1a1a;
+  border: 1px solid #6a2a24; border-radius: 6px; padding: 5px 7px; line-height: 1.4;
+}
 .hud-portraits { display: flex; gap: 4px; flex-wrap: wrap; }
 .portrait {
   background: var(--panel); border: 1px solid var(--border); border-radius: 6px;

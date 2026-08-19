@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-19 (v=45 hide traits + Passive Perception)
+**Last updated:** 2026-08-19 (v=46 hidden enemy-sight overlay)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=45"></script>` (**currently v=45** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=46"></script>` (**currently v=46** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -111,7 +111,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
     `traceLine`/`firstProjectileBlocker`/`stampObstacleHp` (projectiles hit first body/object),
     hide helpers (`seesClearly`, `whoCanSee` racial-aware, `whoCanHear` vs Passive Perception,
     `hasNaturallyStealthy` / `hasMaskOfTheWild`, `isObscuredByLargerCreature`, `isLightlyObscuredByNature`,
-    `HEARING_RANGE=12`), `generateCombatMap` (18x12, elevation plateaus, hazards; scattered obstacles stamp HP), `spawnEncounter` (boss CR cap
+    `isHiddenUnit`, `sightOverlayTiles`, `HEARING_RANGE=12`), `generateCombatMap` (18x12, elevation plateaus, hazards; scattered obstacles stamp HP), `spawnEncounter` (boss CR cap
     `crCap = 1.5*floor - 1`; boss `maxHp*1.5`), `attackRoll` (adv/dis, Halfling reroll 1s, Lucky
     reroll ≤10 spending luck), `pushPopup`, `pushFx`, `updateVision`. Combat object carries
     `locId`, `loc`, `floor`.
@@ -290,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=45 → next is v=46.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=46 → next is v=47.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -352,8 +352,8 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Hide racial traits + Passive Perception contests shipped at **v=45**.
-  Next ship is **v=46**.
+- **Where we are:** Hidden enemy-sight overlay restored/strengthened at **v=46**.
+  Next ship is **v=47**.
 - **GitHub (this chat, 2026-08-19):** https://github.com/Foodpapi/Avernus-Descent is live.
   Workspace has `.git` tracking `origin/main`. Shipped commit:
   **`65d5f03` — Add full game source through v=44**.
@@ -370,10 +370,13 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   stored as `u.stealthScore`. Hidden = `u.hidden` plus status `{id:'hidden', name:'Hidden', rounds:99}`.
   After each `moveUnit` step: re-check every hidden unit for visual *or* hearing detection.
   Rogue **classLevel >= 2**: Cunning Action Hide via `performAction({ type:'hide', asBonus:true })`.
-  While the current player is hidden, `drawEnemySight` paints red wash on tiles `tilesSeenBy` each
-  **revealed** enemy. `STATUS_DESCRIPTIONS.hidden` in `src/data/features.js`. `canSee` wraps
+  While the current player is hidden, `drawEnemySight` paints a strong red hatch on
+  `sightOverlayTiles` (every living enemy's visual cone, clipped to discovered/visible tiles — ducking
+  behind a wall no longer erases the overlay). Hider sprite is ghosted at 0.55 alpha; a green ring
+  means unseen, amber means in-cone but still hidden (racial), red means clearly seen. HUD banner
+  explains the overlay. `STATUS_DESCRIPTIONS.hidden` in `src/data/features.js`. `canSee` wraps
   `observerCanSeeTile`. Do **not** treat whole-floor `combat.darkness` as a hard fail (game already
-  models dim as reduced `u.vision`). Tests: `tools/hide_test.mjs`.
+  models dim as reduced `u.vision`). Tests: `tools/hide_test.mjs` (incl. test 15 overlay).
 - **Naturally Stealthy (v=45):** Halfling (`naturallyStealthy: true`). Can hide when a living
   creature at least one size larger is adjacent **and** at least as close to the observer as the
   hider is. `whoCanSee` / `seesClearly` honor this, so they stay hidden while the body remains
@@ -405,7 +408,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=45**.
+  stamp is **v=47**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -416,11 +419,11 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=45**. Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=46**. Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update (v=45 hide traits) is newer than that commit.
+This handoff log update (v=46 hidden sight overlay) is newer than that commit.
 
 Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
