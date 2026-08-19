@@ -109,7 +109,7 @@ export const SUBCLASS_DESCRIPTIONS = {
 
 // Conditions, statuses and buffs — keyed by internal id.
 export const STATUS_DESCRIPTIONS = {
-  hidden: 'Hidden — you are unseen. Your next attack has advantage. You cannot hide while a foe can see you clearly (5e). Moving is fine until you step into a revealed enemy\'s line of sight, attack, or otherwise give yourself away.',
+  hidden: 'Hidden — you are unseen. Your next attack has advantage. While you are Hidden, enemy line of sight is painted in red so you can see which tiles would spot you. A green ring means you are unseen; amber means you stand in a cone but a racial trait still conceals you. You cannot hide while a foe can see you clearly (5e), unless Naturally Stealthy (behind a larger creature) or Mask of the Wild (foliage/mist) applies. Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Moving is fine until you are seen, heard, attack, or otherwise give yourself away.',
   dying: 'Dying — you are at 0 HP and bleeding out. Each of your turns you make a death saving throw: two successes stabilize you at 1 HP, two failures kill you. Any healing ends this immediately.',
   prone: 'Prone — you are on the ground. Attacks against you from melee have advantage; your own melee attacks have disadvantage. Standing up costs half your movement.',
   stunned: 'Stunned — you cannot act, move, or take reactions. Attacks against you have advantage.',
@@ -153,6 +153,7 @@ export const STATUS_DESCRIPTIONS = {
   armor_of_agathys: 'Armor of Agathys — you have temporary HP, and any creature that hits you in melee takes cold damage.',
   crown_of_stars: 'Crown of Stars — seven motes orbit you; hurl one each round for 4d12 radiant.',
   dragon_breath: 'Dragon\'s Breath — you have a breath weapon (3d6 cone) you can use each round.',
+  deafened: 'Deafened — you cannot hear. You automatically fail any ability check that requires hearing, and you cannot contest a hide with Passive Perception.',
   overboard: 'Overboard — you have fallen into deep water! You are out of the fight for 3 rounds, then drag yourself back aboard, battered.',
   pack: 'Pack Tactics — you have advantage on attacks against a creature adjacent to your ally.',
   sacred_weapon: 'Sacred Weapon — your weapon glows: +your CHA modifier on attack rolls.',

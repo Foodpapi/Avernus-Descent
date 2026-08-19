@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-19 (handoff after GitHub push; game still **v=44**)
+**Last updated:** 2026-08-19 (v=46 hidden enemy-sight overlay)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=44"></script>` (**currently v=44** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=46"></script>` (**currently v=46** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -54,7 +54,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
   sounds, mute button + M key.
 - `src/rng.js` — `makeRng` (mulberry32), `uid`, `clamp`, `ordinal`, `weighted`, `sample`, `deepClone`.
 - `src/data/`:
-  - `races.js` — 9 races, `SKILL_LIST`, `SKILL_ABILITY`.
+  - `races.js` — **10 races** (High Elf + Wood Elf; Halfling has `naturallyStealthy`), `SKILL_LIST`, `SKILL_ABILITY`.
   - `classes.js` — 12 classes; `AST_LEVELS=[4,8,12,16,19]`; **`extraAsi: [6,14]` on fighter, `[10]`
     on rogue**; slot tables `FULL_CASTER_SLOTS`/`HALF_CASTER_SLOTS`/`WARLOCK_SLOTS`; `CANTRIP_COUNTS`.
   - `spells.js` — **101 spells**, `SPELL_MAP`, `SPELL_LISTS`, `cantripDmg`, ~35 `concentration: true`
@@ -94,6 +94,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
   - `rules.js` — character math: `mod`, `effectiveAbility` (conSet/strSet/intSet trinkets),
     `classLevel(char)` vs `char.level` (total) — **classLevel/level split added for multiclassing**,
     `computeMaxHp`, `computeAc`, `computeSpeed`, `attackBonusFor`, `savingThrowMod`, `skillMod`,
+    `passiveScore` / `passivePerception` (10 + skill; Observant +5 to passive only; wolves `keen_senses` +5),
     `canCastSpell` (prepared check; any slot ≥ spell level = upcastable; `char.featCasts[spellId]`
     free casts), `levelUpCharacter` (ASI gate `asiAtLevel(char, char.level, {primaryOnly:true})`),
     `asiLevelsForClass`, `asiAtLevel(char, level, opts)` (primaryOnly/secondaryOnly — **ASIs/feats
@@ -108,7 +109,9 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
     (refresh + haste + thief 2 bonus), `findPath` (clips to maxCost, partial path), `hasLOS`,
     `unitAc` (wildshape AC, cover, dodge), `coverFor` (opts.ignoreCover for Spell Sniper),
     `traceLine`/`firstProjectileBlocker`/`stampObstacleHp` (projectiles hit first body/object),
-    `generateCombatMap` (18x12, elevation plateaus, hazards; scattered obstacles stamp HP), `spawnEncounter` (boss CR cap
+    hide helpers (`seesClearly`, `whoCanSee` racial-aware, `whoCanHear` vs Passive Perception,
+    `hasNaturallyStealthy` / `hasMaskOfTheWild`, `isObscuredByLargerCreature`, `isLightlyObscuredByNature`,
+    `isHiddenUnit`, `sightOverlayTiles`, `HEARING_RANGE=12`), `generateCombatMap` (18x12, elevation plateaus, hazards; scattered obstacles stamp HP), `spawnEncounter` (boss CR cap
     `crCap = 1.5*floor - 1`; boss `maxHp*1.5`), `attackRoll` (adv/dis, Halfling reroll 1s, Lucky
     reroll ≤10 spending luck), `pushPopup`, `pushFx`, `updateVision`. Combat object carries
     `locId`, `loc`, `floor`.
@@ -287,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=44 → next is v=45.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=46 → next is v=47.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -325,6 +328,8 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   server restart was missed.
 - **Never blanket-sed `document.body.appendChild(overlay)` in `ui.js`** (showOverlay recursion).
 - `jsdom@24` must be reinstalled with `--no-audit --no-fund` when suites fail to find it.
+- Node 22: `globalThis.navigator = …` throws (navigator is a getter). Test harnesses use
+  `Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true })`.
 - Parallel edits + truncating leftover `scheduleSpellFx` garbage in `combat_actions.js` has
   overwritten in-flight inserts. After any truncate, re-verify `tryHide`/`scheduleWeaponFx` still
   exist after `log()`. File was corrupted twice with duplicate `scheduleSpellFx` + leftover
@@ -347,8 +352,8 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Hide LOS + physical projectile FX shipped at **v=44**. All 27 suites were green
-  at that ship. This chat did **not** bump the game version. Next ship is **v=45**.
+- **Where we are:** Hidden enemy-sight overlay restored/strengthened at **v=46**.
+  Next ship is **v=47**.
 - **GitHub (this chat, 2026-08-19):** https://github.com/Foodpapi/Avernus-Descent is live.
   Workspace has `.git` tracking `origin/main`. Shipped commit:
   **`65d5f03` — Add full game source through v=44**.
@@ -357,17 +362,34 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   made `start.bat` launch `node tools/serve.js`.
   **This CONTEXT_LOG update is local only** — it is *not* in `65d5f03`. Push later if the user
   wants GitHub in sync (Contents: Read and write PAT; never store the token).
-- **Hide / LOS (v=44):** PHB: you can't hide from a creature that can see you clearly. Moving does
-  **not** break Hide unless a foe can now see you. Attacking gives away position **hit or miss**.
-  Hide fails if `whoCanSee` is non-empty (unless invisible). Failed Hide still spends the action.
-  Stealth `d20 + skillMod(Stealth)` logged; stored as `u.stealthScore`. Hidden = `u.hidden` plus
-  status `{id:'hidden', name:'Hidden', rounds:99}`. After each `moveUnit` step: check the mover if
-  hidden; also check other hidden units the mover can now see. Rogue **classLevel >= 2**: Cunning
-  Action Hide via `performAction({ type:'hide', asBonus:true })`. While the current player is
-  hidden, `drawEnemySight` paints red wash on tiles `tilesSeenBy` each **revealed** enemy.
-  Hidden sprites `globalAlpha = 0.55`. `STATUS_DESCRIPTIONS.hidden` in `src/data/features.js`.
-  `canSee` wraps `observerCanSeeTile`. Do **not** treat whole-floor `combat.darkness` as a hard
-  fail (game already models dim as reduced `u.vision`). Tests: `tools/hide_test.mjs`.
+- **Hide / LOS (v=44) + racial hide + hearing (v=45):** PHB: you can't hide from a creature that
+  can see you clearly. Moving does **not** break Hide unless a foe can now see or hear you.
+  Attacking gives away position **hit or miss**. Hide fails if `whoCanSee` is non-empty (unless
+  invisible). Failed Hide still spends the action. Stealth is `d20 + skillMod(Stealth)` (armor
+  stealth disad, Boots of Elvenkind adv, Pass without Trace +10, Halfling Lucky reroll 1s);
+  stored as `u.stealthScore`. Hidden = `u.hidden` plus status `{id:'hidden', name:'Hidden', rounds:99}`.
+  After each `moveUnit` step: re-check every hidden unit for visual *or* hearing detection.
+  Rogue **classLevel >= 2**: Cunning Action Hide via `performAction({ type:'hide', asBonus:true })`.
+  While the current player is hidden, `drawEnemySight` paints a strong red hatch on
+  `sightOverlayTiles` (every living enemy's visual cone, clipped to discovered/visible tiles — ducking
+  behind a wall no longer erases the overlay). Hider sprite is ghosted at 0.55 alpha; a green ring
+  means unseen, amber means in-cone but still hidden (racial), red means clearly seen. HUD banner
+  explains the overlay. `STATUS_DESCRIPTIONS.hidden` in `src/data/features.js`. `canSee` wraps
+  `observerCanSeeTile`. Do **not** treat whole-floor `combat.darkness` as a hard fail (game already
+  models dim as reduced `u.vision`). Tests: `tools/hide_test.mjs` (incl. test 15 overlay).
+- **Naturally Stealthy (v=45):** Halfling (`naturallyStealthy: true`). Can hide when a living
+  creature at least one size larger is adjacent **and** at least as close to the observer as the
+  hider is. `whoCanSee` / `seesClearly` honor this, so they stay hidden while the body remains
+  between them and the watcher. A human standing next to an ally still cannot hide.
+- **Mask of the Wild (v=45):** New **Wood Elf** race (`wood_elf`, +2 DEX +1 WIS, speed 35,
+  `maskOfTheWild: true`). Can hide when lightly obscured by natural phenomena: adjacent/on
+  `natural:true` obstacles (tree/bush/log/stump/vine/mushroom/flower), brambles, fog, or smoke.
+  Existing Elf renamed **High Elf** (id stays `elf`).
+- **Hearing / Passive Perception (v=45):** Hide DC is each foe's Passive Perception
+  (`10 + Perception`; Observant +5 to **passive only** — RAW, not the old +1 to the active check;
+  monster `keen_senses` +5). Stealth >= PP stays hidden; PP > Stealth hears you within
+  `HEARING_RANGE` 12 tiles (60 ft), even through walls. Deafened observers cannot hear. Failed
+  hide due to hearing is logged; walking into earshot of a high-PP foe reveals you without LOS.
 - **Weapon projectiles (v=44):** `scheduleWeaponFx` in `combat_actions.js`: `kind:'arrow'` if
   `weapon.range` starts with `ranged`, else `kind:'thrown'` if thrown property. Colors `#e8d8a0` /
   `#c8a070`. Dur 380 / 460. Called from `weaponAttack`, `useItem` throw, `monsterAttack` ranged.
@@ -386,7 +408,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=45**.
+  stamp is **v=47**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -397,13 +419,14 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=44**. Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=46**. Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update is newer than that commit.
+This handoff log update (v=46 hidden sight overlay) is newer than that commit.
 
 Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
 gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test
 sounds_test moonbeam_test projectile_test hide_test` + `headless.js`.
+ `headless.js`.

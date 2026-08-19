@@ -2,7 +2,7 @@
 // Topographical depth: elevation (high ground), cover objects, hazards
 // (fire/lava/water/darkness/brambles/grease), and LOS blockers.
 
-import { mod, computeAc, computeSpeed, weaponDiceFor, weaponStatFor, attackBonusFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, buildMonster, rollMonsterHp, monsterMod, hasFeat } from './rules.js';
+import { mod, computeAc, computeSpeed, weaponDiceFor, weaponStatFor, attackBonusFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, buildMonster, rollMonsterHp, monsterMod, hasFeat, passivePerception } from './rules.js';
 import { WEAPONS, FISTS, ARMORS, ENCHANTMENTS, CONSUMABLES } from '../data/items.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import { MONSTERS, ELITE_TRAITS, xpForCr } from '../data/monsters.js';
@@ -331,14 +331,139 @@ export function canSeeUnit(combat, observer, target) {
   return observerCanSeeTile(combat, observer, target.x, target.y);
 }
 
+export const SIZE_RANK = { tiny: 0, small: 1, medium: 2, large: 3, huge: 4, gargantuan: 5 };
+export const HEARING_RANGE = 12; // 60 ft
+
+export function sizeRank(size) {
+  return SIZE_RANK[String(size || 'Medium').toLowerCase()] ?? 2;
+}
+
+export function unitSize(u) {
+  if (!u) return 'Medium';
+  if (u.form && u.form.size) return u.form.size;
+  const c = u.char;
+  if (!c) return 'Medium';
+  if (c.size) return c.size;
+  if (c.race && c.race.size) return c.race.size;
+  return 'Medium';
+}
+
+export function hasNaturallyStealthy(u) {
+  const c = u && u.char;
+  if (!c) return false;
+  if (c.naturallyStealthy) return true;
+  if (c.race && c.race.naturallyStealthy) return true;
+  return c.raceId === 'halfling';
+}
+
+export function hasMaskOfTheWild(u) {
+  const c = u && u.char;
+  if (!c) return false;
+  if (c.maskOfTheWild) return true;
+  if (c.race && c.race.maskOfTheWild) return true;
+  return c.raceId === 'wood_elf';
+}
+
+export function isObscuredByLargerCreature(combat, hider, observer) {
+  if (!combat || !hider) return false;
+  const need = sizeRank(unitSize(hider)) + 1;
+  const dist = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const dHO = observer ? dist(hider, observer) : 99;
+  for (const c of combat.units) {
+    if (c === hider || c === observer) continue;
+    if (c.dead || c.overboard || c.hp <= 0) continue;
+    if (Math.max(Math.abs(c.x - hider.x), Math.abs(c.y - hider.y)) !== 1) continue;
+    if (sizeRank(unitSize(c)) < need) continue;
+    if (!observer || dist(c, observer) <= dHO) return true;
+  }
+  return false;
+}
+
+export function isLightlyObscuredByNature(combat, u) {
+  if (!combat || !u) return false;
+  const naturalHere = (t) => {
+    if (!t) return false;
+    if (t.hazard === 'brambles') return true;
+    if (t.obstacle && OBSTACLES[t.obstacle] && OBSTACLES[t.obstacle].natural) return true;
+    if (t.smokeRounds > 0) return true;
+    return false;
+  };
+  const here = combat.grid[u.y] && combat.grid[u.y][u.x];
+  if (naturalHere(here)) return true;
+  if (combat.effects) {
+    for (const e of combat.effects) {
+      if (e.type !== 'fog' && e.type !== 'smoke') continue;
+      if (Math.max(Math.abs((e.x || 0) - u.x), Math.abs((e.y || 0) - u.y)) <= (e.r || 0)) return true;
+    }
+  }
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    const nx = u.x + dx, ny = u.y + dy;
+    if (!inBounds(combat, nx, ny)) continue;
+    if (naturalHere(combat.grid[ny][nx])) return true;
+  }
+  return false;
+}
+
+// 5e: you can't hide from a creature that can see you *clearly*. Racial
+// exceptions (Naturally Stealthy / Mask of the Wild) mean the observer
+// does not see you clearly even if they have LOS.
+export function seesClearly(combat, observer, target) {
+  if (!canSeeUnit(combat, observer, target)) return false;
+  if (hasNaturallyStealthy(target) && isObscuredByLargerCreature(combat, target, observer)) return false;
+  if (hasMaskOfTheWild(target) && isLightlyObscuredByNature(combat, target)) return false;
+  return true;
+}
+
 export function whoCanSee(combat, unit) {
   if (!unit) return [];
   const foes = unit.team === 'player' ? 'enemy' : 'player';
-  return combat.units.filter(o => o.team === foes && !o.dead && o.hp > 0 && !o.overboard && canSeeUnit(combat, o, unit));
+  return combat.units.filter(o => o.team === foes && !o.dead && o.hp > 0 && !o.overboard && seesClearly(combat, o, unit));
 }
 
 export function isClearlySeen(combat, unit) {
   return whoCanSee(combat, unit).length > 0;
+}
+
+export function isHiddenUnit(u) {
+  return !!(u && (u.hidden || (u.statuses || []).some(s => s.id === 'hidden')));
+}
+
+// Tiles to paint while a player is Hidden: every living enemy's visual cone,
+// clipped to the map the party has already discovered (so ducking behind a
+// wall does not erase the overlay — that was the v=44 planning tool).
+export function sightOverlayTiles(combat) {
+  const out = [];
+  const seen = new Set();
+  if (!combat || !combat.units) return out;
+  for (const e of combat.units) {
+    if (e.team !== 'enemy' || e.dead || e.overboard || e.hp <= 0) continue;
+    for (const t of tilesSeenBy(combat, e)) {
+      const tile = combat.grid[t.y] && combat.grid[t.y][t.x];
+      if (!combat.revealed && tile && !tile.discovered && !tile.visible) continue;
+      const k = t.y * combat.w + t.x;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ x: t.x, y: t.y });
+    }
+  }
+  return out;
+}
+
+export function canHear(combat, observer, target) {
+  if (!observer || !target) return false;
+  if (observer.dead || observer.overboard || observer.hp <= 0) return false;
+  if (getStatus(observer, 'deafened')) return false;
+  const d = Math.abs(observer.x - target.x) + Math.abs(observer.y - target.y);
+  if (d > HEARING_RANGE) return false;
+  if (target.stealthScore == null) return false;
+  // Hide DC = Passive Perception. Stealth >= PP stays hidden; PP > Stealth hears you.
+  return passivePerception(observer) > target.stealthScore;
+}
+
+export function whoCanHear(combat, unit) {
+  if (!unit || unit.stealthScore == null) return [];
+  const foes = unit.team === 'player' ? 'enemy' : 'player';
+  return combat.units.filter(o => o.team === foes && canHear(combat, o, unit));
 }
 
 export function tilesSeenBy(combat, observer) {

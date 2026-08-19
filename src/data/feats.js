@@ -32,7 +32,7 @@ export const FEATS = [
   { id: 'mobile', name: 'Mobile', source: "Player's Handbook", halfAsi: null, choice: null,
     desc: '+2 tiles of speed. Enemies you attacked this turn cannot make opportunity attacks against you.' },
   { id: 'observant', name: 'Observant', source: "Player's Handbook", halfAsi: ['INT', 'WIS'], choice: null,
-    desc: '+1 Intelligence or Wisdom. +1 to Perception and Investigation.' },
+    desc: '+1 Intelligence or Wisdom. +5 to your passive Wisdom (Perception) and passive Intelligence (Investigation) scores.' },
   { id: 'piercer', name: 'Piercer', source: "Tasha's Cauldron", halfAsi: ['STR', 'DEX'], choice: null,
     desc: '+1 Strength or Dexterity. Once per turn, reroll a piercing damage roll and take the higher; critical hits add one extra die.' },
   { id: 'polearm_master', name: 'Polearm Master', source: "Player's Handbook", halfAsi: null, choice: null,

@@ -290,7 +290,7 @@ export function helpScreen() {
     ['🏘 The Town (every 3rd floor)', 'A long rest restores everything and resets blessings. Hire mercenaries (fight any 4 of your roster), browse a themed shop (blacksmiths skew to steel, archers to bows, rare Mind Flayer & Bhaal shops sell strange things), and try townspeople skill checks — pass for a party-wide +1 blessing until the next long rest, fail for a −1. Clerics, druids and wizards prepare their daily spells at camp.'],
 
     ['⛰ Terrain', 'High ground gives +1 to ranged attacks per elevation. Low cover (tables, crates, logs) gives +2 AC vs ranged. Tall obstacles block sight. Destroyable objects have HP bars, materials, and resistances (wood hates fire, stone hates thunder…). Hazards hurt: fire, lava, brambles, grease, deep water (don\'t fall in!).'],
-    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). While hidden, revealed enemies show their line of sight — step into it and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
+    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Halflings can hide behind a larger creature (Naturally Stealthy); Wood Elves can hide in foliage or mist (Mask of the Wild). While hidden, enemy line of sight is painted red on the map — step into it or get too close and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
     ['🎖 Feats', 'ASIs and feats follow CLASS level (5e rules): at class levels 4, 8, 12, 16 and 19 — plus 6 & 14 for fighters and 10 for rogues — you may take a FEAT instead of the ability score increase. Multiclassing does not change your class-level milestones: a Wizard 3 / Barbarian 1 gets no ASI until one of those classes reaches its milestone. 29 feats with real mechanics: Great Weapon Master & Sharpshooter (toggleable -5/+10), Polearm Master, Sentinel, War Caster, Elemental Adept, Lucky, Mobile, Charger, Tough, Resilient, Magic Initiate and more.'],
 
     ['🎁 Loot', 'After each victory choose loot: weapons (possibly enchanted), armor, potions, scrolls. Boss floors (every 3rd) drop better loot.'],
@@ -1070,6 +1070,10 @@ function buildHud(cs) {
   const left = div('hud-top-left');
   left.appendChild(h('div', 'hud-loc', `${loc.icon} ${loc.name} — Floor ${combat.floor} · Round ${combat.round}`));
   left.appendChild(h('div', 'hud-weather', `⛰ High ground +1 per level · 🛡 Low cover +2 AC vs ranged · ${loc.hazard === 'lava' ? '🌋 Lava burns!' : loc.hazard === 'water' ? '🌊 Deep water!' : loc.hazard === 'fire' ? '🔥 Fires burn!' : loc.hazard === 'darkness' ? '🌑 Darkness limits sight' : loc.hazard === 'brambles' ? '🌿 Brambles slow & cut' : loc.hazard === 'grease' ? '🫧 Grease is slippery' : ''}`));
+  const actor = currentPlayerUnit();
+  if (actor && Combat.isHiddenUnit(actor)) {
+    left.appendChild(h('div', 'hud-hide', '🙈 Hidden — red tiles are enemy line of sight. A green ring means you are unseen; amber means you are in a cone but still hidden (racial). Step into a red tile or get too close and you are spotted.'));
+  }
   top.appendChild(left);
   const portraits = div('hud-portraits');
   for (const u of combat.units.filter(u => u.team === 'player')) {
@@ -1355,7 +1359,7 @@ function radialItems(level) {
     items.push({ id: 'attack', icon: '🗡', label: 'Attack', cls: 'radial-green', disabled: dis, fn: () => { closeRadial(); enterAttackMode(); } });
     items.push({ id: 'dash', icon: '🏃', label: 'Dash', cls: 'radial-green', disabled: dis, fn: () => { performAction(G.combat, u.id, { type: 'dash' }); afterPlayerAction(); openRadial('root'); } });
     items.push({ id: 'dodge', icon: '🛡', label: 'Dodge', cls: 'radial-green', disabled: dis, fn: () => { performAction(G.combat, u.id, { type: 'dodge' }); afterPlayerAction(); openRadial('root'); } });
-    items.push({ id: 'hide', icon: '🙈', label: 'Hide', cls: 'radial-green', disabled: dis, fn: () => { performAction(G.combat, u.id, { type: 'hide' }); afterPlayerAction(); openRadial('root'); } });
+    items.push({ id: 'hide', icon: '🙈', label: 'Hide', cls: 'radial-green', disabled: dis, fn: () => { performAction(G.combat, u.id, { type: 'hide' }); toastHideResult(u); afterPlayerAction(); openRadial('root'); } });
     if (hasActionSpells) items.push({ id: 'spells', icon: '✨', label: 'Spells', cls: 'radial-green', disabled: dis, fn: () => { closeRadial(); openSpellbook('action'); } });
     if (hasItems) items.push({ id: 'items', icon: '🎒', label: 'Items', cls: 'radial-green', disabled: dis, fn: () => { closeRadial(); openInventory(); } });
     if (hasActionAbils) items.push({ id: 'abilities', icon: '⚡', label: 'Abilities', cls: 'radial-green', disabled: dis, fn: () => { closeRadial(); openAbilities(getAbilities(u).filter(id => !abilityIsBonus(u, id))); } });
@@ -1378,7 +1382,7 @@ function radialItems(level) {
     // 5e Cunning Action: Rogue 2+ may Hide as a bonus action
     const classLv = char.classLevel || char.level || 1;
     if (char.cls && char.cls.id === 'rogue' && classLv >= 2) {
-      items.push({ id: 'cunning_hide', icon: '🙈', label: 'Hide (Cunning)', cls: 'radial-orange', disabled: usedBonus, fn: () => { performAction(G.combat, u.id, { type: 'hide', asBonus: true }); afterPlayerAction(); openRadial('root'); } });
+      items.push({ id: 'cunning_hide', icon: '🙈', label: 'Hide (Cunning)', cls: 'radial-orange', disabled: usedBonus, fn: () => { performAction(G.combat, u.id, { type: 'hide', asBonus: true }); toastHideResult(u); afterPlayerAction(); openRadial('root'); } });
     }
     items.push({ id: 'back', icon: '↩', label: 'Back', cls: 'radial-grey', disabled: false, fn: () => openRadial('root') });
     return items;
@@ -1445,6 +1449,10 @@ function positionRadial() {
 }
 
 // ------- Action modes -------
+function toastHideResult(u) {
+  if (u && Combat.isHiddenUnit(u)) toast('🙈 Hidden — enemy sightlines shown in red');
+}
+
 function enterAttackMode() {
   const u = currentPlayerUnit();
   if (!u || !Combat.hasAction(u)) return;
@@ -2284,7 +2292,10 @@ function render() {
     const spx = dx + (TILE_SIZE * scale - spw) / 2;
     const spy = dy + TILE_SIZE * scale - sph;
     if (sp._isArt) ctx.imageSmoothingEnabled = true; // 2x canvas downscales to screen
+    const hiddenNow = Combat.isHiddenUnit(u);
+    if (hiddenNow) ctx.globalAlpha = 0.55;
     ctx.drawImage(sp, spx, spy, spw, sph);
+    if (hiddenNow) ctx.globalAlpha = 1;
     if (sp._isArt) ctx.imageSmoothingEnabled = false;
     // dead
     if (u.dead) {
@@ -2448,26 +2459,46 @@ function drawEffect(ctx, e, combat, scale) {
 
 function drawEnemySight(ctx, combat, scale) {
   const u = currentPlayerUnit();
-  if (!u || (!u.hidden && !(u.statuses || []).some(s => s.id === 'hidden'))) return;
+  if (!u || !Combat.isHiddenUnit(u)) return;
+  const tilePx = TILE_SIZE * scale;
+  const tiles = Combat.sightOverlayTiles(combat);
   const seen = new Set();
-  for (const e of combat.units) {
-    if (e.team !== 'enemy' || e.dead || e.overboard || e.hp <= 0) continue;
-    if (!combat.revealed && !Combat.enemyVisible(combat, e)) continue;
-    const tiles = Combat.tilesSeenBy(combat, e);
-    for (const t of tiles) {
-      const k = t.y * combat.w + t.x;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      ctx.fillStyle = 'rgba(220, 50, 40, 0.16)';
-      ctx.fillRect(t.x * TILE_SIZE * scale, t.y * TILE_SIZE * scale, TILE_SIZE * scale, TILE_SIZE * scale);
+  for (const t of tiles) {
+    const k = t.y * combat.w + t.x;
+    seen.add(k);
+    const dx = t.x * tilePx, dy = t.y * tilePx;
+    ctx.fillStyle = 'rgba(210, 32, 24, 0.34)';
+    ctx.fillRect(dx, dy, tilePx, tilePx);
+    ctx.strokeStyle = 'rgba(255, 90, 70, 0.55)';
+    ctx.lineWidth = Math.max(1, 1.25 * scale);
+    ctx.strokeRect(dx + 0.5, dy + 0.5, tilePx - 1, tilePx - 1);
+  }
+  if (tiles.length) {
+    ctx.save();
+    ctx.beginPath();
+    for (const t of tiles) ctx.rect(t.x * tilePx, t.y * tilePx, tilePx, tilePx);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(255, 70, 50, 0.22)';
+    ctx.lineWidth = 1;
+    const step = Math.max(4, 5.5 * scale);
+    const w = combat.w * tilePx, h = combat.h * tilePx;
+    for (let i = -h; i < w + h; i += step) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + h, h);
+      ctx.stroke();
     }
+    ctx.restore();
   }
-  // mark the hider's own tile so you can tell if you are currently seen
-  if (Combat.isClearlySeen(combat, u)) {
-    ctx.strokeStyle = 'rgba(255, 70, 50, 0.95)';
-    ctx.lineWidth = 2 * scale;
-    ctx.strokeRect(u.x * TILE_SIZE * scale + 2, u.y * TILE_SIZE * scale + 2, TILE_SIZE * scale - 4, TILE_SIZE * scale - 4);
-  }
+  // Ring on the hider: green = unseen, amber = in a cone but still hidden
+  // (Naturally Stealthy / Mask of the Wild), red = clearly seen.
+  const inSight = seen.has(u.y * combat.w + u.x);
+  const clearly = Combat.isClearlySeen(combat, u);
+  ctx.lineWidth = 2.6 * scale;
+  if (clearly) ctx.strokeStyle = 'rgba(255, 70, 50, 0.95)';
+  else if (inSight) ctx.strokeStyle = 'rgba(255, 196, 60, 0.95)';
+  else ctx.strokeStyle = 'rgba(80, 220, 120, 0.95)';
+  ctx.strokeRect(u.x * tilePx + 2, u.y * tilePx + 2, tilePx - 4, tilePx - 4);
 }
 
 function tilesOnLine(x0, y0, x1, y1) {

@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<!DOCTYPE html><html><body><div id="ui"></div></body></html>', { url: 'http://localhost/', pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
-globalThis.localStorage = dom.window.localStorage; globalThis.navigator = dom.window.navigator;
+globalThis.localStorage = dom.window.localStorage; Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
 globalThis.requestAnimationFrame = fn => setTimeout(fn, 16);
 dom.window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: (t,p) => p==='measureText' ? () => ({width:20}) : () => {}, set: (t,p,v)=>{t[p]=v;return true;} });
 const ui = await import('../src/ui.js');

@@ -138,6 +138,7 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
     rested: true,
     personality: hero ? 'The Hero' : rng.pick(PERSONALITIES),
     wildShaped: false,
+    size: race.size || 'Medium',
     vision: race.darkvision ? 12 : 8,
   };
 
@@ -671,10 +672,37 @@ export function isFinesseOrRanged(char, weaponId) {
   return w.properties.includes('finesse') || w.range.startsWith('ranged');
 }
 
+// 5e Passive score = 10 + skill modifier. Observant adds +5 to passive
+// Perception and Investigation only (not to the active check).
+export function passiveScore(char, skill) {
+  let score = 10;
+  try { score += skillMod(char, skill); } catch (e) {
+    const ab = SKILL_ABILITY[skill];
+    if (char && char.abilities && ab) score += mod(char.abilities[ab]);
+  }
+  if (hasFeat(char, 'observant') && (skill === 'Perception' || skill === 'Investigation')) score += 5;
+  return score;
+}
+
+export function passivePerception(who) {
+  const c = who && who.char ? who.char : who;
+  if (!c) return 10;
+  if (c.stats) {
+    let pp = 10 + mod(c.stats.WIS || 10);
+    if ((c.powers || []).includes('keen_senses')) pp += 5;
+    return pp;
+  }
+  let pp = 10;
+  try { pp = passiveScore(c, 'Perception'); } catch (e) {
+    if (c.abilities) pp = 10 + mod(c.abilities.WIS || 10);
+  }
+  if ((c.powers || []).includes('keen_senses')) pp += 5;
+  return pp;
+}
+
 export function skillMod(char, skill) {
   const ab = SKILL_ABILITY[skill];
   let m = mod(effectiveAbility(char, ab));
-  if (hasFeat(char, 'observant') && (skill === 'Perception' || skill === 'Investigation')) m += 1;
   if (char.skills.includes(skill)) m += char.prof;
   if (char.skillExpertise.includes(skill)) m += char.prof;
   if (char.cls.id === 'bard' && classLevel(char) >= 2 && !char.skills.includes(skill)) m += Math.floor(char.prof / 2); // Jack of All Trades
