@@ -1,0 +1,1951 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "file": "tiles/mountain_pass_ground_1.png",
+      "kind": "tile",
+      "desc": "mountain_pass ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/mountain_pass_ground_2.png",
+      "kind": "tile",
+      "desc": "mountain_pass ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/mountain_pass_ground_3.png",
+      "kind": "tile",
+      "desc": "mountain_pass ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/mountain_pass_wall.png",
+      "kind": "tile",
+      "desc": "mountain_pass border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/mountain_pass_elevation_1.png",
+      "kind": "tile",
+      "desc": "mountain_pass high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/mountain_pass_elevation_2.png",
+      "kind": "tile",
+      "desc": "mountain_pass high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_ground_1.png",
+      "kind": "tile",
+      "desc": "tavern ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_ground_2.png",
+      "kind": "tile",
+      "desc": "tavern ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_ground_3.png",
+      "kind": "tile",
+      "desc": "tavern ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_wall.png",
+      "kind": "tile",
+      "desc": "tavern border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_elevation_1.png",
+      "kind": "tile",
+      "desc": "tavern high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_elevation_2.png",
+      "kind": "tile",
+      "desc": "tavern high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_ground_1.png",
+      "kind": "tile",
+      "desc": "ship ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_ground_2.png",
+      "kind": "tile",
+      "desc": "ship ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_ground_3.png",
+      "kind": "tile",
+      "desc": "ship ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_wall.png",
+      "kind": "tile",
+      "desc": "ship border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_elevation_1.png",
+      "kind": "tile",
+      "desc": "ship high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_elevation_2.png",
+      "kind": "tile",
+      "desc": "ship high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_ground_1.png",
+      "kind": "tile",
+      "desc": "town ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_ground_2.png",
+      "kind": "tile",
+      "desc": "town ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_ground_3.png",
+      "kind": "tile",
+      "desc": "town ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_wall.png",
+      "kind": "tile",
+      "desc": "town border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_elevation_1.png",
+      "kind": "tile",
+      "desc": "town high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_elevation_2.png",
+      "kind": "tile",
+      "desc": "town high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_ground_1.png",
+      "kind": "tile",
+      "desc": "forest ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_ground_2.png",
+      "kind": "tile",
+      "desc": "forest ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_ground_3.png",
+      "kind": "tile",
+      "desc": "forest ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_wall.png",
+      "kind": "tile",
+      "desc": "forest border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_elevation_1.png",
+      "kind": "tile",
+      "desc": "forest high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_elevation_2.png",
+      "kind": "tile",
+      "desc": "forest high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_ground_1.png",
+      "kind": "tile",
+      "desc": "dungeon ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_ground_2.png",
+      "kind": "tile",
+      "desc": "dungeon ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_ground_3.png",
+      "kind": "tile",
+      "desc": "dungeon ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_wall.png",
+      "kind": "tile",
+      "desc": "dungeon border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_elevation_1.png",
+      "kind": "tile",
+      "desc": "dungeon high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/dungeon_elevation_2.png",
+      "kind": "tile",
+      "desc": "dungeon high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_ground_1.png",
+      "kind": "tile",
+      "desc": "ruins ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_ground_2.png",
+      "kind": "tile",
+      "desc": "ruins ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_ground_3.png",
+      "kind": "tile",
+      "desc": "ruins ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_wall.png",
+      "kind": "tile",
+      "desc": "ruins border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_elevation_1.png",
+      "kind": "tile",
+      "desc": "ruins high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ruins_elevation_2.png",
+      "kind": "tile",
+      "desc": "ruins high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_ground_1.png",
+      "kind": "tile",
+      "desc": "fey ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_ground_2.png",
+      "kind": "tile",
+      "desc": "fey ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_ground_3.png",
+      "kind": "tile",
+      "desc": "fey ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_wall.png",
+      "kind": "tile",
+      "desc": "fey border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_elevation_1.png",
+      "kind": "tile",
+      "desc": "fey high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_elevation_2.png",
+      "kind": "tile",
+      "desc": "fey high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_ground_1.png",
+      "kind": "tile",
+      "desc": "avernus ground variant A",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_ground_2.png",
+      "kind": "tile",
+      "desc": "avernus ground variant B",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_ground_3.png",
+      "kind": "tile",
+      "desc": "avernus ground variant C",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_wall.png",
+      "kind": "tile",
+      "desc": "avernus border wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_elevation_1.png",
+      "kind": "tile",
+      "desc": "avernus high ground (ledge)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_elevation_2.png",
+      "kind": "tile",
+      "desc": "avernus high ground (bluff)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/tavern_hazard_grease.png",
+      "kind": "tile",
+      "desc": "tavern hazard: grease",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/ship_hazard_water.png",
+      "kind": "tile",
+      "desc": "ship hazard: water",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/town_hazard_fire.png",
+      "kind": "tile",
+      "desc": "town hazard: fire",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/forest_hazard_brambles.png",
+      "kind": "tile",
+      "desc": "forest hazard: brambles",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_hazard_water.png",
+      "kind": "tile",
+      "desc": "fey hazard: water",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/fey_hazard_brambles.png",
+      "kind": "tile",
+      "desc": "fey hazard: brambles",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/avernus_hazard_lava.png",
+      "kind": "tile",
+      "desc": "avernus hazard: lava",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hazard_fire.png",
+      "kind": "tile",
+      "desc": "generic hazard: fire (fallback)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hazard_lava.png",
+      "kind": "tile",
+      "desc": "generic hazard: lava (fallback)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hazard_water.png",
+      "kind": "tile",
+      "desc": "generic hazard: water (fallback)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hazard_brambles.png",
+      "kind": "tile",
+      "desc": "generic hazard: brambles (fallback)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hazard_grease.png",
+      "kind": "tile",
+      "desc": "generic hazard: grease (fallback)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_ground_1.png",
+      "kind": "tile",
+      "desc": "hub scene ground variant 1 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_ground_2.png",
+      "kind": "tile",
+      "desc": "hub scene ground variant 2 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_ground_3.png",
+      "kind": "tile",
+      "desc": "hub scene ground variant 3 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_wall.png",
+      "kind": "tile",
+      "desc": "hub scene border wall (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_elevation_1.png",
+      "kind": "tile",
+      "desc": "hub scene high ground ledge (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/hub_elevation_2.png",
+      "kind": "tile",
+      "desc": "hub scene high ground bluff (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_ground_1.png",
+      "kind": "tile",
+      "desc": "camp scene ground variant 1 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_ground_2.png",
+      "kind": "tile",
+      "desc": "camp scene ground variant 2 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_ground_3.png",
+      "kind": "tile",
+      "desc": "camp scene ground variant 3 (optional — falls back to another tileset)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_wall.png",
+      "kind": "tile",
+      "desc": "camp scene border wall (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_elevation_1.png",
+      "kind": "tile",
+      "desc": "camp scene high ground ledge (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "tiles/camp_elevation_2.png",
+      "kind": "tile",
+      "desc": "camp scene high ground bluff (optional)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/pillar.png",
+      "kind": "object",
+      "desc": "Pillar",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/tree.png",
+      "kind": "object",
+      "desc": "Tree",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/house.png",
+      "kind": "object",
+      "desc": "House",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/wall.png",
+      "kind": "object",
+      "desc": "Wall",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/statue.png",
+      "kind": "object",
+      "desc": "Statue",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/mast.png",
+      "kind": "object",
+      "desc": "Mast",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/rock.png",
+      "kind": "object",
+      "desc": "Rock",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/boulder.png",
+      "kind": "object",
+      "desc": "Boulder",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/spike.png",
+      "kind": "object",
+      "desc": "Obsidian Spike",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/rift.png",
+      "kind": "object",
+      "desc": "Chasm",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/sarcophagus.png",
+      "kind": "object",
+      "desc": "Sarcophagus",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/crate.png",
+      "kind": "object",
+      "desc": "Crate",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/cannon.png",
+      "kind": "object",
+      "desc": "Cannon",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/hearth.png",
+      "kind": "object",
+      "desc": "Hearth",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/fountain.png",
+      "kind": "object",
+      "desc": "Fountain",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/cart.png",
+      "kind": "object",
+      "desc": "Cart",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/stone_circle.png",
+      "kind": "object",
+      "desc": "Standing Stones",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/mushroom.png",
+      "kind": "object",
+      "desc": "Giant Mushroom",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/vine.png",
+      "kind": "object",
+      "desc": "Vines",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/bone_pile.png",
+      "kind": "object",
+      "desc": "Bone Pile",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/chain.png",
+      "kind": "object",
+      "desc": "Chains",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/brazier.png",
+      "kind": "object",
+      "desc": "Brazier",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/table.png",
+      "kind": "object",
+      "desc": "Table",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/barrel.png",
+      "kind": "object",
+      "desc": "Barrel",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/chair.png",
+      "kind": "object",
+      "desc": "Chair",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/bush.png",
+      "kind": "object",
+      "desc": "Bush",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/log.png",
+      "kind": "object",
+      "desc": "Fallen Log",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/stump.png",
+      "kind": "object",
+      "desc": "Stump",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/rubble.png",
+      "kind": "object",
+      "desc": "Rubble",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/arch.png",
+      "kind": "object",
+      "desc": "Fallen Arch",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/rope_coil.png",
+      "kind": "object",
+      "desc": "Coiled Rope",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/flower.png",
+      "kind": "object",
+      "desc": "Fey Flowers",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/cliff_1.png",
+      "kind": "object",
+      "desc": "Ledge (High Ground)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/cliff_2.png",
+      "kind": "object",
+      "desc": "Bluff (High Ground)",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "objects/gravel.png",
+      "kind": "object",
+      "desc": "Scree",
+      "w": 56,
+      "h": 56
+    },
+    {
+      "file": "units/monster_goblin.png",
+      "kind": "unit",
+      "desc": "Goblin",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_rat.png",
+      "kind": "unit",
+      "desc": "Giant Rat",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_bat.png",
+      "kind": "unit",
+      "desc": "Giant Bat",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_bandit.png",
+      "kind": "unit",
+      "desc": "Bandit",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_cultist.png",
+      "kind": "unit",
+      "desc": "Cultist",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_thug.png",
+      "kind": "unit",
+      "desc": "Thug",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_wolf.png",
+      "kind": "unit",
+      "desc": "Wolf",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_skeleton.png",
+      "kind": "unit",
+      "desc": "Skeleton",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_zombie.png",
+      "kind": "unit",
+      "desc": "Zombie",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_giant_spider.png",
+      "kind": "unit",
+      "desc": "Giant Spider",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_hobgoblin.png",
+      "kind": "unit",
+      "desc": "Hobgoblin",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_orc.png",
+      "kind": "unit",
+      "desc": "Orc",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_ogre.png",
+      "kind": "unit",
+      "desc": "Ogre",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_wererat.png",
+      "kind": "unit",
+      "desc": "Wererat",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_ghoul.png",
+      "kind": "unit",
+      "desc": "Ghoul",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_wight.png",
+      "kind": "unit",
+      "desc": "Wight",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_minotaur.png",
+      "kind": "unit",
+      "desc": "Minotaur",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_harpy.png",
+      "kind": "unit",
+      "desc": "Harpy",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_pirate.png",
+      "kind": "unit",
+      "desc": "Pirate",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_sahuagin.png",
+      "kind": "unit",
+      "desc": "Sahuagin",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_imp.png",
+      "kind": "unit",
+      "desc": "Imp",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_spined_devil.png",
+      "kind": "unit",
+      "desc": "Spined Devil",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_bearded_devil.png",
+      "kind": "unit",
+      "desc": "Bearded Devil",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_hell_hound.png",
+      "kind": "unit",
+      "desc": "Hell Hound",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_barbed_devil.png",
+      "kind": "unit",
+      "desc": "Barbed Devil",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_erinyes.png",
+      "kind": "unit",
+      "desc": "Erinyes",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_bone_devil.png",
+      "kind": "unit",
+      "desc": "Bone Devil",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_balor.png",
+      "kind": "unit",
+      "desc": "Balor",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_owlbear.png",
+      "kind": "unit",
+      "desc": "Owlbear",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_troll.png",
+      "kind": "unit",
+      "desc": "Troll",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_basilisk.png",
+      "kind": "unit",
+      "desc": "Basilisk",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_mimic.png",
+      "kind": "unit",
+      "desc": "Mimic",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_gelatinous_cube.png",
+      "kind": "unit",
+      "desc": "Gelatinous Cube",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_flameskull.png",
+      "kind": "unit",
+      "desc": "Flameskull",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_mind_flayer.png",
+      "kind": "unit",
+      "desc": "Mind Flayer",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_beholder.png",
+      "kind": "unit",
+      "desc": "Beholder",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_dragon_young_red.png",
+      "kind": "unit",
+      "desc": "Young Red Dragon",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/monster_kraken_spawn.png",
+      "kind": "unit",
+      "desc": "Kraken Spawn",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_bear.png",
+      "kind": "unit",
+      "desc": "Wild Shape: bear",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_dire_wolf.png",
+      "kind": "unit",
+      "desc": "Wild Shape: dire_wolf",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_wolf.png",
+      "kind": "unit",
+      "desc": "Wild Shape: wolf",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_giant_spider.png",
+      "kind": "unit",
+      "desc": "Wild Shape: giant_spider",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_badger.png",
+      "kind": "unit",
+      "desc": "Wild Shape: badger",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_cat.png",
+      "kind": "unit",
+      "desc": "Wild Shape: cat",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/form_rat.png",
+      "kind": "unit",
+      "desc": "Wild Shape: rat",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_barbarian.png",
+      "kind": "unit",
+      "desc": "PC class: barbarian",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_bard.png",
+      "kind": "unit",
+      "desc": "PC class: bard",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_cleric.png",
+      "kind": "unit",
+      "desc": "PC class: cleric",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_druid.png",
+      "kind": "unit",
+      "desc": "PC class: druid",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_fighter.png",
+      "kind": "unit",
+      "desc": "PC class: fighter",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_monk.png",
+      "kind": "unit",
+      "desc": "PC class: monk",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_paladin.png",
+      "kind": "unit",
+      "desc": "PC class: paladin",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_ranger.png",
+      "kind": "unit",
+      "desc": "PC class: ranger",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_rogue.png",
+      "kind": "unit",
+      "desc": "PC class: rogue",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC class: sorcerer",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_warlock.png",
+      "kind": "unit",
+      "desc": "PC class: warlock",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/class_wizard.png",
+      "kind": "unit",
+      "desc": "PC class: wizard",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: human barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: human bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: human cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: human druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: human fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: human monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: human paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: human ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: human rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: human sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: human warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_human_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: human wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: elf barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: elf bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: elf cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: elf druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: elf fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: elf monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: elf paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: elf ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: elf rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: elf sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: elf warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_elf_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: elf wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dwarf_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: dwarf wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfling_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: halfling wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_halfelf_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: halfelf wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_half_orc_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: half_orc wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_tiefling_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: tiefling wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_gnome_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: gnome wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_barbarian.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn barbarian (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_bard.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn bard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_cleric.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn cleric (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_druid.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn druid (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_fighter.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn fighter (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_monk.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn monk (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_paladin.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn paladin (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_ranger.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn ranger (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_rogue.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn rogue (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_sorcerer.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn sorcerer (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_warlock.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn warlock (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    },
+    {
+      "file": "units/race_dragonborn_wizard.png",
+      "kind": "unit",
+      "desc": "PC skin: dragonborn wizard (optional — falls back to class sprite)",
+      "w": 40,
+      "h": 48
+    }
+  ]
+}

@@ -1,0 +1,1466 @@
+{
+  "generated": "2026-08-19T12:09:08.314Z",
+  "base": "assets/sounds/",
+  "extensions": [
+    ".ogg",
+    ".mp3",
+    ".wav"
+  ],
+  "note": "Each slot lists the path without extension; drop any of the supported extensions. Missing slots are silent at runtime.",
+  "totalSlots": 242,
+  "presentCount": 0,
+  "slots": [
+    {
+      "path": "ambience/avernus",
+      "desc": "Background ambience for The Depths of Avernus",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/camp",
+      "desc": "Camp background bed (crackling fire, crickets)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/dungeon",
+      "desc": "Background ambience for Sunken Crypt",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/fey",
+      "desc": "Background ambience for Faerie Glade",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/forest",
+      "desc": "Background ambience for Whispering Woods",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/hub",
+      "desc": "Hub background bed (braziers, distant chatter)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/mountain_pass",
+      "desc": "Background ambience for Mountain Pass",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/ruins",
+      "desc": "Background ambience for Crumbling Ruins",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/ship",
+      "desc": "Background ambience for Sea of Swords",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/tavern",
+      "desc": "Background ambience for Brawling Tavern",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ambience/town",
+      "desc": "Background ambience for Burning Town",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "combat/crit",
+      "desc": "Heavy critical-hit impact",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/fall",
+      "desc": "Body hits the ground (prone, grease slip)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hazard_brambles",
+      "desc": "Thorns rustle and tear (brambles damage)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hazard_fire",
+      "desc": "Flames crackle (fire hazard damage)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hazard_grease",
+      "desc": "Slippery splat (grease slip)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hazard_lava",
+      "desc": "Lava sizzle (lava hazard damage)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hazard_water",
+      "desc": "Splash (water hazard)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/hit_flesh",
+      "desc": "Generic flesh impact (fallback for weapon hits)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "combat/miss",
+      "desc": "Attack swings through empty air",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/shove",
+      "desc": "Shove / shove-aside thud and scuffle",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "combat/start",
+      "desc": "Encounter start sting (floor intro → first round)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/avernus",
+      "desc": "Footstep override for The Depths of Avernus (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/camp",
+      "desc": "Footstep override for the camp walk scene (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/dirt",
+      "desc": "Footstep on dirt — packed earth",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/dungeon",
+      "desc": "Footstep override for Sunken Crypt (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/fey",
+      "desc": "Footstep override for Faerie Glade (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/forest",
+      "desc": "Footstep override for Whispering Woods (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/generic",
+      "desc": "Generic footstep (fallback when no surface sound exists)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/grass",
+      "desc": "Footstep on grass — soft turf",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/hub",
+      "desc": "Footstep override for the hub walk scene (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/lava",
+      "desc": "Footstep on lava — sizzling hell-rock",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/metal",
+      "desc": "Footstep on metal — clanking grating",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/mountain_pass",
+      "desc": "Footstep override for Mountain Pass (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/ruins",
+      "desc": "Footstep override for Crumbling Ruins (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/sand",
+      "desc": "Footstep on sand — loose sand",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/ship",
+      "desc": "Footstep override for Sea of Swords (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/snow",
+      "desc": "Footstep on snow — crunched snow",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/stone",
+      "desc": "Footstep on stone — cobbles, rock, flagstone",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/tavern",
+      "desc": "Footstep override for Brawling Tavern (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/town",
+      "desc": "Footstep override for Burning Town (replaces the surface sound)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "footsteps/water",
+      "desc": "Footstep on water — wading splash",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "footsteps/wood",
+      "desc": "Footstep on wood — planks, decking, floorboards",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/chest_open",
+      "desc": "Victory loot chest creaks open",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/glass_break",
+      "desc": "Glass shatters on impact",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/gold",
+      "desc": "Coins jingle (loot screen)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/potion_drink",
+      "desc": "Gulp — cork pop and swallow",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/potion_throw",
+      "desc": "Flask flies through the air",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "items/scroll",
+      "desc": "Paper unrolls / scroll read",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/camp",
+      "desc": "Campfire rest theme",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/combat",
+      "desc": "Generic combat music (fallback)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/combat_avernus",
+      "desc": "Combat music for The Depths of Avernus (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_boss",
+      "desc": "Boss battle music (floors 3, 6, 9, 12)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/combat_dungeon",
+      "desc": "Combat music for Sunken Crypt (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_fey",
+      "desc": "Combat music for Faerie Glade (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_forest",
+      "desc": "Combat music for Whispering Woods (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_mountain_pass",
+      "desc": "Combat music for Mountain Pass (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_ruins",
+      "desc": "Combat music for Crumbling Ruins (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_ship",
+      "desc": "Combat music for Sea of Swords (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_tavern",
+      "desc": "Combat music for Brawling Tavern (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/combat_town",
+      "desc": "Combat music for Burning Town (falls back to music/combat)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "music/defeat",
+      "desc": "Defeat sting (run over — plays once)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/hub",
+      "desc": "The Hub — Dante's emporium theme",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/title",
+      "desc": "Main menu theme",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/town",
+      "desc": "Town between floors",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "music/victory",
+      "desc": "Victory sting (floor cleared — plays once)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/acid",
+      "desc": "Shared acid spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/acid_splash",
+      "desc": "Acid Splash — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/aid",
+      "desc": "Aid — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/armor_of_agathys",
+      "desc": "Armor of Agathys — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/aura_of_vitality",
+      "desc": "Aura of Vitality — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/bane",
+      "desc": "Bane — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/banishment",
+      "desc": "Banishment — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/bestow_curse",
+      "desc": "Bestow Curse — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/bless",
+      "desc": "Bless — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/blight",
+      "desc": "Blight — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/blink",
+      "desc": "Blink — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/branding_smite",
+      "desc": "Branding Smite — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/buff",
+      "desc": "Empowering shimmer (bless, haste, mage armor…)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/burning_hands",
+      "desc": "Burning Hands — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/call_lightning",
+      "desc": "Call Lightning — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/cast_generic",
+      "desc": "Generic spell-cast whoosh (last-resort fallback)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/chain_lightning",
+      "desc": "Chain Lightning — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/chill_touch",
+      "desc": "Chill Touch — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/chromatic_orb",
+      "desc": "Chromatic Orb — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/cloud_of_daggers",
+      "desc": "Cloud of Daggers — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/cloudkill",
+      "desc": "Cloudkill — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/cold",
+      "desc": "Shared cold spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/cone_of_cold",
+      "desc": "Cone of Cold — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/crown_of_stars",
+      "desc": "Crown of Stars — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/cure_wounds",
+      "desc": "Cure Wounds — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/darkness",
+      "desc": "Darkness — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/death_ward",
+      "desc": "Death Ward — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/debuff",
+      "desc": "Cursed chime (bane, hold person, slow…)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/dimension_door",
+      "desc": "Dimension Door — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/disintegrate",
+      "desc": "Disintegrate — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/dissonant_whispers",
+      "desc": "Dissonant Whispers — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/divine_favor",
+      "desc": "Divine Favor — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/dragon_breath",
+      "desc": "Dragon's Breath — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/eldritch_blast",
+      "desc": "Eldritch Blast — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/entangle",
+      "desc": "Entangle — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/expeditious_retreat",
+      "desc": "Expeditious Retreat — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/faerie_fire",
+      "desc": "Faerie Fire — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fear",
+      "desc": "Fear — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/finger_of_death",
+      "desc": "Finger of Death — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fire",
+      "desc": "Shared fire spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/fire_bolt",
+      "desc": "Fire Bolt — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fire_shield",
+      "desc": "Fire Shield — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fire_storm",
+      "desc": "Fire Storm — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fireball",
+      "desc": "Fireball — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/flame_strike",
+      "desc": "Flame Strike — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/flaming_sphere",
+      "desc": "Flaming Sphere — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/fog_cloud",
+      "desc": "Fog Cloud — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/force",
+      "desc": "Shared force spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/grease",
+      "desc": "Grease — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/greater_invisibility",
+      "desc": "Greater Invisibility — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/guiding_bolt",
+      "desc": "Guiding Bolt — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/haste",
+      "desc": "Haste — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/heal",
+      "desc": "Heal — cast sound",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/healing_word",
+      "desc": "Healing Word — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hellish_rebuke",
+      "desc": "Hellish Rebuke — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/heroism",
+      "desc": "Heroism — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hex",
+      "desc": "Hex — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hold_monster",
+      "desc": "Hold Monster — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hold_person",
+      "desc": "Hold Person — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hunters_mark",
+      "desc": "Hunter's Mark — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/hypnotic_pattern",
+      "desc": "Hypnotic Pattern — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/ice_storm",
+      "desc": "Ice Storm — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/impact",
+      "desc": "Magic impact on a target (spell attack lands / save failed)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/inflict_wounds",
+      "desc": "Inflict Wounds — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/invisibility",
+      "desc": "Invisibility — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/lesser_restoration",
+      "desc": "Lesser Restoration — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/lightning",
+      "desc": "Shared lightning spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/lightning_bolt",
+      "desc": "Lightning Bolt — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/mage_armor",
+      "desc": "Mage Armor — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/magic_missile",
+      "desc": "Magic Missile — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/mass_cure_wounds",
+      "desc": "Mass Cure Wounds — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/mass_healing_word",
+      "desc": "Mass Healing Word — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/meteor_swarm",
+      "desc": "Meteor Swarm — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/mind_spike",
+      "desc": "Mind Spike — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/mirror_image",
+      "desc": "Mirror Image — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/misty_step",
+      "desc": "Misty Step — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/moonbeam",
+      "desc": "Moonbeam — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/necrotic",
+      "desc": "Shared necrotic spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/pass_without_trace",
+      "desc": "Pass Without Trace — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/physical",
+      "desc": "Shared physical spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/poison",
+      "desc": "Shared poison spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/polymorph",
+      "desc": "Polymorph — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/power_word_kill",
+      "desc": "Power Word Kill — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/produce_flame",
+      "desc": "Produce Flame — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/protection_from_energy",
+      "desc": "Protection from Energy — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/psychic",
+      "desc": "Shared psychic spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/radiant",
+      "desc": "Shared radiant spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/ray_of_frost",
+      "desc": "Ray of Frost — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/revivify",
+      "desc": "Revivify — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/sacred_flame",
+      "desc": "Sacred Flame — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/scorching_ray",
+      "desc": "Scorching Ray — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/searing_smite",
+      "desc": "Searing Smite — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/shatter",
+      "desc": "Shatter — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/shield_of_faith",
+      "desc": "Shield of Faith — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/shocking_grasp",
+      "desc": "Shocking Grasp — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/sleep",
+      "desc": "Sleep — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/slow",
+      "desc": "Slow — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/spike_growth",
+      "desc": "Spike Growth — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/spirit_guardians",
+      "desc": "Spirit Guardians — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/spiritual_weapon",
+      "desc": "Spiritual Weapon — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/stoneskin",
+      "desc": "Stoneskin — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/sunbeam",
+      "desc": "Sunbeam — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/sunburst",
+      "desc": "Sunburst — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/synaptic_static",
+      "desc": "Synaptic Static — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/tashas_hideous_laughter",
+      "desc": "Tasha's Hideous Laughter — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/thorn_whip",
+      "desc": "Thorn Whip — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/thunder",
+      "desc": "Shared thunder spell sound (fallback for spells of this damage type)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/thunder_step",
+      "desc": "Thunder Step — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/thunderwave",
+      "desc": "Thunderwave — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/toll_the_dead",
+      "desc": "Toll the Dead — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/utility",
+      "desc": "Utility magic murmur (misty step, darkness…)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "spells/vampiric_touch",
+      "desc": "Vampiric Touch — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/vicious_mockery",
+      "desc": "Vicious Mockery — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/wall_of_fire",
+      "desc": "Wall of Fire — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/wall_of_stone",
+      "desc": "Wall of Stone — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/web",
+      "desc": "Web — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "spells/wrathful_smite",
+      "desc": "Wrathful Smite — cast sound",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ui/click",
+      "desc": "Generic menu click — plays on every button press",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "ui/close",
+      "desc": "Panel / modal / radial menu closes",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "ui/equip",
+      "desc": "Weapon or armor equipped / unequipped",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ui/error",
+      "desc": "Invalid action — no points left, bad target, can't cast",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "ui/gold",
+      "desc": "Coins — buying, selling, looting gold",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "ui/hover",
+      "desc": "Soft hover blip when mousing over menu options",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "ui/levelup",
+      "desc": "Level-up / new ability fanfare",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "ui/open",
+      "desc": "Panel / modal / radial menu opens",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "units/death",
+      "desc": "Creature dies — death rattle / collapse",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "units/grunt_1",
+      "desc": "Creature takes a hit — grunt A (randomized with 2 & 3)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "units/grunt_2",
+      "desc": "Creature takes a hit — grunt B",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "units/grunt_3",
+      "desc": "Creature takes a hit — grunt C",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "units/roar",
+      "desc": "Large monster roars (rage, boss powers)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "units/shapeshift",
+      "desc": "Wild shape / transformation whoosh",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/arrow_hit",
+      "desc": "Arrow / bolt strikes a target",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/battleaxe",
+      "desc": "Unique attack sound for Battleaxe (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/blade_of_avernus",
+      "desc": "Unique attack sound for Blade of Avernus (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/bow_shot",
+      "desc": "Bowstring twang + arrow release",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/club",
+      "desc": "Unique attack sound for Club (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/crossbow_shot",
+      "desc": "Crossbow thunk + bolt release",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/dagger",
+      "desc": "Unique attack sound for Dagger (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/fists",
+      "desc": "Unique attack sound for unarmed strikes",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/flail",
+      "desc": "Unique attack sound for Flail (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/glaive",
+      "desc": "Unique attack sound for Glaive (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/greataxe",
+      "desc": "Unique attack sound for Greataxe (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/greatclub",
+      "desc": "Unique attack sound for Greatclub (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/greatsword",
+      "desc": "Unique attack sound for Greatsword (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/halberd",
+      "desc": "Unique attack sound for Halberd (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/hand_crossbow",
+      "desc": "Unique attack sound for Hand Crossbow (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/handaxe",
+      "desc": "Unique attack sound for Handaxe (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/heavy_crossbow",
+      "desc": "Unique attack sound for Heavy Crossbow (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/hit_blunt",
+      "desc": "Crunching bludgeoning impact",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/hit_slash",
+      "desc": "Blade bites flesh (slashing impact)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/hit_stab",
+      "desc": "Point sinks in (piercing impact)",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/javelin",
+      "desc": "Unique attack sound for Javelin (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/light_crossbow",
+      "desc": "Unique attack sound for Light Crossbow (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/longbow",
+      "desc": "Unique attack sound for Longbow (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/longsword",
+      "desc": "Unique attack sound for Longsword (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/mace",
+      "desc": "Unique attack sound for Mace (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/maul",
+      "desc": "Unique attack sound for Maul (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/morningstar",
+      "desc": "Unique attack sound for Morningstar (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/orin_dagger",
+      "desc": "Unique attack sound for Orin's Dagger (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/pike",
+      "desc": "Unique attack sound for Pike (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/quarterstaff",
+      "desc": "Unique attack sound for Quarterstaff (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/rapier",
+      "desc": "Unique attack sound for Rapier (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/scimitar",
+      "desc": "Unique attack sound for Scimitar (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/shortbow",
+      "desc": "Unique attack sound for Shortbow (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/shortsword",
+      "desc": "Unique attack sound for Shortsword (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/sickle",
+      "desc": "Unique attack sound for Sickle (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/sling",
+      "desc": "Unique attack sound for Sling (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/sling_shot",
+      "desc": "Sling whirl and release",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/spear",
+      "desc": "Unique attack sound for Spear (replaces the shared piercing swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/swing_blunt",
+      "desc": "Heavy club / hammer swing",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/swing_slash",
+      "desc": "Sword / axe whoosh through air",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/swing_stab",
+      "desc": "Stabbing lunge whoosh",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/unarmed_hit",
+      "desc": "Bare-knuckle punch lands",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/unarmed_swing",
+      "desc": "Fist / paw swipes air",
+      "optional": false,
+      "file": null
+    },
+    {
+      "path": "weapons/warhammer",
+      "desc": "Unique attack sound for Warhammer (replaces the shared bludgeoning swing)",
+      "optional": true,
+      "file": null
+    },
+    {
+      "path": "weapons/whip",
+      "desc": "Unique attack sound for Whip (replaces the shared slashing swing)",
+      "optional": true,
+      "file": null
+    }
+  ]
+}
