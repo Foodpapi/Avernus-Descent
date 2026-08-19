@@ -1,7 +1,7 @@
 // Combat action resolution: attacks, spells, items, class abilities,
 // status effects, death, and round management.
 
-import { mod, attackBonusFor, weaponDiceFor, weaponStatFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, spellSlotSummary, canCastSpell, computeSpeed, WILD_SHAPES, townMod, hasFeat, skillMod } from './rules.js';
+import { mod, attackBonusFor, weaponDiceFor, weaponStatFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, spellSlotSummary, canCastSpell, computeSpeed, WILD_SHAPES, townMod, hasFeat, skillMod, passivePerception } from './rules.js';
 import { WEAPONS, FISTS, CONSUMABLES, ENCHANTMENTS, ARMORS } from '../data/items.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import { RACE_MAP } from '../data/races.js';
@@ -16,7 +16,7 @@ import {
   unitAt, getStatus, addStatus, removeStatus, unitAc, elevationAt, inBounds, isPassable, moveCost, findPath,
   hasLOS, canSee, coverFor, roll, d20, attackRoll, updateVision, enemyVisible, startOfTurnReset, currentUnit,
   aliveEnemies, alivePlayers, DMG_TYPES, pushPopup, pushFx, firstProjectileBlocker, stampObstacleHp,
-  canSeeUnit, whoCanSee, isClearlySeen,
+  canSeeUnit, whoCanSee, isClearlySeen, whoCanHear,
 } from './combat.js';
 
 export function log(combat, msg) {
@@ -26,21 +26,45 @@ export function log(combat, msg) {
 
 // ============================== HIDE / SIGHT ==============================
 // 5e PHB: "You can't hide from a creature that can see you clearly."
+// Hide is a Dexterity (Stealth) check contested by Passive Perception (hearing
+// or otherwise noticing you) of any foe in earshot. Racial exceptions:
+// Lightfoot Naturally Stealthy, Wood Elf Mask of the Wild.
 function stealthBonusFor(u) {
   const c = u.char;
   if (!c) return 0;
+  let bonus = 0;
   if (c.abilities && c.skills) {
-    try { return skillMod(c, 'Stealth'); } catch (e) { /* fall through */ }
-  }
-  if (c.abilities) return mod(c.abilities.DEX);
-  if (c.stats) return mod(c.stats.DEX);
-  return 0;
+    try { bonus = skillMod(c, 'Stealth'); } catch (e) {
+      bonus = c.abilities ? mod(c.abilities.DEX) : 0;
+    }
+  } else if (c.abilities) bonus = mod(c.abilities.DEX);
+  else if (c.stats) bonus = mod(c.stats.DEX);
+  if (c.buffs && c.buffs.some(b => b.id === 'pass_without_trace')) bonus += 10;
+  return bonus;
+}
+
+function rollStealth(combat, u) {
+  const bonus = stealthBonusFor(u);
+  const rollOnce = () => {
+    let n = d20(combat.rng);
+    if (u.char && u.char.raceId === 'halfling' && n === 1) n = d20(combat.rng);
+    return n;
+  };
+  let a = rollOnce();
+  const armor = u.char && ARMORS[u.char.armor];
+  const dis = !!(armor && armor.stealth);
+  const adv = !!(u.char && (u.char.trinkets || []).some(t => t.stealthAdv));
+  let die = a;
+  if (adv && !dis) die = Math.max(a, rollOnce());
+  else if (dis && !adv) die = Math.min(a, rollOnce());
+  return die + bonus;
 }
 
 export function clearHidden(combat, u, reason) {
   const was = !!(u.hidden || getStatus(u, 'hidden'));
   u.hidden = false;
   removeStatus(u, 'hidden');
+  u.stealthScore = null;
   if (was && reason) log(combat, reason);
   return was;
 }
@@ -48,9 +72,18 @@ export function clearHidden(combat, u, reason) {
 export function revealIfSeen(combat, u) {
   if (!u || (!u.hidden && !getStatus(u, 'hidden'))) return false;
   const watchers = whoCanSee(combat, u);
-  if (!watchers.length) return false;
-  clearHidden(combat, u, `👁 ${watchers[0].name} spots ${u.name} — they are no longer hidden!`);
-  return true;
+  if (watchers.length) {
+    clearHidden(combat, u, `👁 ${watchers[0].name} spots ${u.name} — they are no longer hidden!`);
+    return true;
+  }
+  const hearers = whoCanHear(combat, u);
+  if (hearers.length) {
+    const pp = passivePerception(hearers[0]);
+    const stealth = u.stealthScore;
+    clearHidden(combat, u, `👂 ${hearers[0].name} hears ${u.name} (Passive Perception ${pp} vs Stealth ${stealth}) — they are no longer hidden!`);
+    return true;
+  }
+  return false;
 }
 
 export function tryHide(combat, u) {
@@ -61,11 +94,17 @@ export function tryHide(combat, u) {
       return false;
     }
   }
-  const bonus = stealthBonusFor(u);
-  const total = d20(combat.rng) + bonus;
+  const total = rollStealth(combat, u);
+  u.stealthScore = total;
+  const hearers = whoCanHear(combat, u);
+  if (hearers.length) {
+    const pp = passivePerception(hearers[0]);
+    log(combat, `${u.name} tries to hide (Stealth ${total}) — ${hearers[0].name} hears them (Passive Perception ${pp})!`);
+    u.stealthScore = null;
+    return false;
+  }
   u.hidden = true;
   addStatus(u, 'hidden', 'Hidden', 99);
-  u.stealthScore = total;
   log(combat, `🙈 ${u.name} hides (Stealth ${total}). Enemy sightlines are revealed.`);
   return true;
 }
@@ -251,11 +290,11 @@ export function moveUnit(combat, u, path) {
     if (spike) {
       applyDamage(combat, u, null, roll(combat.rng, '2d4'), 'piercing', { noCrit: true, quiet: true });
     }
-    // 5e: moving does not break Hide unless a foe can now see you clearly.
+    // 5e: moving does not break Hide unless a foe can now see or hear you.
     if (u.hidden || getStatus(u, 'hidden')) revealIfSeen(combat, u);
     for (const o of combat.units) {
       if (o === u || o.dead || o.overboard) continue;
-      if ((o.hidden || getStatus(o, 'hidden')) && canSeeUnit(combat, u, o)) revealIfSeen(combat, o);
+      if (o.hidden || getStatus(o, 'hidden')) revealIfSeen(combat, o);
     }
   }
   if (moved) {

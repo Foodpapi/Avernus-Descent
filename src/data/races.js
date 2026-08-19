@@ -10,7 +10,7 @@ export const RACES = [
     features: [{ name: 'Human Versatility', text: '+1 to all ability scores.' }],
   },
   {
-    id: 'elf', name: 'Elf', hpMult: 1.0,
+    id: 'elf', name: 'High Elf', hpMult: 1.0,
     asi: { DEX: 2, INT: 1 },
     speed: 30, size: 'Medium', darkvision: true,
     desc: 'Graceful and keen-eyed. +2 DEX, +1 INT.',
@@ -37,9 +37,11 @@ export const RACES = [
     asi: { DEX: 2, CHA: 1 },
     speed: 25, size: 'Small', darkvision: false,
     desc: 'Lucky and nimble. +2 DEX, +1 CHA.',
+    naturallyStealthy: true,
     features: [
       { name: 'Lucky', text: 'When you roll a 1 on an attack, ability check or save, you may reroll the die once.' },
       { name: 'Brave', text: 'Advantage on saves vs. being frightened.' },
+      { name: 'Naturally Stealthy', text: 'You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you.' },
     ],
   },
   {
@@ -94,6 +96,21 @@ export const RACES = [
       { name: 'Breath Weapon', text: 'Once per floor, exhale a 3-tile cone of elemental damage (fire, cold, acid, or lightning).' },
       { name: 'Draconic Resistance', text: 'Resistance to the damage type of your draconic ancestry.' },
     ],
+  },
+  {
+    id: 'wood_elf', name: 'Wood Elf', hpMult: 1.0,
+    asi: { DEX: 2, WIS: 1 },
+    speed: 35, size: 'Medium', darkvision: true,
+    maskOfTheWild: true,
+    desc: 'Wild and fleet-footed. +2 DEX, +1 WIS.',
+    features: [
+      { name: 'Mask of the Wild', text: 'You can attempt to hide even when you are only lightly obscured by foliage, mist, or other natural phenomena.' },
+      { name: 'Fleet of Foot', text: 'Your base walking speed is 35 feet.' },
+      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+      { name: 'Keen Senses', text: 'Proficiency in Perception.' },
+      { name: 'Fey Ancestry', text: 'Advantage on saves vs. being charmed.' },
+    ],
+    bonusSkills: ['Perception'],
   },
 ];
 

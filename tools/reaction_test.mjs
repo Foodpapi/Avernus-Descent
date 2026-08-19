@@ -13,7 +13,7 @@ const dom = new JSDOM('<!DOCTYPE html><html><body><div id="app"><div id="ui"></d
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
-globalThis.navigator = dom.window.navigator;
+Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
 globalThis.requestAnimationFrame = fn => setTimeout(fn, 16);
 globalThis.confirm = () => true;
 dom.window.HTMLCanvasElement.prototype.getContext = function () {
