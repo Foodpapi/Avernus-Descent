@@ -1,0 +1,36 @@
+{
+  "name": "avernus-descent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A 5e roguelike — top-down turn-based tactical combat with permadeath and meta progression.",
+  "scripts": {
+    "test": "node tools/headless.js && node tools/meta_test.mjs && node tools/dom_test.mjs && node tools/flow_test.mjs && node tools/inspect_test.mjs && node tools/radial_test.mjs && node tools/economy_test.mjs && node tools/spellbook_test.mjs && node tools/popup_test.mjs && node tools/reaction_test.mjs && node tools/campfire_test.mjs && node tools/features_test.mjs && node tools/console_test.mjs && node tools/fixes_test.mjs && node tools/spellfx_test.mjs && node tools/gear_test.mjs && node tools/walk_test.mjs && node tools/sheetclick_test.mjs && node tools/feats_test.mjs && node tools/hex_test.mjs && node tools/sounds_test.mjs",
+    "test:flow": "node tools/flow_test.mjs",
+    "test:inspect": "node tools/inspect_test.mjs",
+    "test:radial": "node tools/radial_test.mjs",
+    "test:economy": "node tools/economy_test.mjs",
+    "test:spellbook": "node tools/spellbook_test.mjs",
+    "test:click": "node tools/repro_click.mjs",
+    "build": "node tools/build.js",
+    "serve": "node tools/serve.js",
+    "test:popup": "node tools/popup_test.mjs",
+    "test:reaction": "node tools/reaction_test.mjs",
+    "test:campfire": "node tools/campfire_test.mjs",
+    "test:features": "node tools/features_test.mjs",
+    "test:console": "node tools/console_test.mjs",
+    "test:fixes": "node tools/fixes_test.mjs",
+    "test:spellfx": "node tools/spellfx_test.mjs",
+    "test:gear": "node tools/gear_test.mjs",
+    "test:walk": "node tools/walk_test.mjs",
+    "test:sheetclick": "node tools/sheetclick_test.mjs",
+    "test:feats": "node tools/feats_test.mjs",
+    "manifest": "node tools/gen_manifest.js",
+    "manifest:sounds": "node tools/gen_sound_manifest.js",
+    "check:sounds": "node tools/check_sounds.mjs",
+    "test:hex": "node tools/hex_test.mjs",
+    "test:sounds": "node tools/sounds_test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
