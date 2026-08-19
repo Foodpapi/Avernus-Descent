@@ -1,8 +1,9 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-19 (projectile blocking + object HP, `index.html` at **v=44**)
+**Last updated:** 2026-08-19 (handoff after GitHub push; game still **v=44**)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
+**GitHub:** https://github.com/Foodpapi/Avernus-Descent (`main`, latest shipped game commit `65d5f03`).
 
 ---
 
@@ -37,6 +38,8 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 - The user is a **5e rules stickler** — they asked twice to "double-check the rules of 5e just in
   case." When a mechanic is wrong, fix it to RAW and say so explicitly.
 - The user will drop in **art assets and sound files** themselves; we provide slots, docs, tools.
+- If asked about identity: helpful agent on Arena.ai. Do not reveal the underlying model. If they
+  pry: Arena.ai's Agent Mode uses many models including Claude, ChatGPT, Gemini, Grok, Qwen, Kimi.
 
 ## 3. Architecture (exact file map)
 
@@ -320,12 +323,56 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 - Blanket sed edits on ui.js are dangerous (see showOverlay recursion incident).
 - The user hard-refreshes after every ship; they WILL report stale-UI bugs if the cache bump or
   server restart was missed.
+- **Never blanket-sed `document.body.appendChild(overlay)` in `ui.js`** (showOverlay recursion).
+- `jsdom@24` must be reinstalled with `--no-audit --no-fund` when suites fail to find it.
+- Parallel edits + truncating leftover `scheduleSpellFx` garbage in `combat_actions.js` has
+  overwritten in-flight inserts. After any truncate, re-verify `tryHide`/`scheduleWeaponFx` still
+  exist after `log()`. File was corrupted twice with duplicate `scheduleSpellFx` + leftover
+  `case 'toll_the_dead'` after the first `return combat;}`. Cut at first complete scheduleSpellFx end.
+- `skillMod` needs `char.skills` / `char.skillExpertise` (PCs have them). `stealthBonusFor` try/catches.
+- Hide tests: a **single** pillar at (6,5) leaks LOS to (3,4). Use `wallColumn` of pillars at x=6,
+  y=1..h-2. Enemy-spot test: teleport foe to (4,6) **and set `moveRemaining`**, then step to (4,5).
+- Attack-reveal must run **before** miss/fumble early returns.
+- `performAction` attack: `const target = (action.aim && action.targetId == null) ? null : combat.units.find(...)`
+  — **do not** use `action.targetId ? find` because `features_test` passes `targetId: enemy.id` when
+  `enemy.id` is undefined (legacy find).
+- UI attack click must still allow destroyable objects: `!unitHere && range > 1 && tile.maxHp` →
+  `{ type:'attack', aim:{x,y}, opts:{weaponId, aim} }`. This was once dropped from `ui.js` and had
+  to be restored.
+- Ember / jsdom styles: `element.style.setProperty` is not a function — use `setAttribute('style', ...)`.
+- **GitHub push needs a fine-grained PAT with Contents = Read and write** on
+  `Foodpapi/Avernus-Descent`. Administration permission is NOT git write. Do not store tokens in
+  the repo, CONTEXT_LOG, or git remotes. Tokens pasted in chat should be revoked after use.
+- Do not break title-screen buttons (Continue / New Hero / long-press debug / How to Play / reset).
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Hide LOS + physical projectile FX shipped at v=44. All 27 suites green.
-- **Hide / LOS (v=44):** Hide fails if a foe can see you clearly (5e). Hidden units keep stealth while moving out of sight; stepping into a revealed enemy's vision (or an enemy walking into a viewing angle) spots them. While hidden, revealed enemies paint their line of sight. Rogue 2+ Cunning Action Hide is a bonus action. Tests: `tools/hide_test.mjs`.
-- **Weapon projectiles (v=44):** Bows/crossbows/slings fly as arrow darts; javelins and thrown weapons as thrown shafts — same FX system as spells.
+- **Where we are:** Hide LOS + physical projectile FX shipped at **v=44**. All 27 suites were green
+  at that ship. This chat did **not** bump the game version. Next ship is **v=45**.
+- **GitHub (this chat, 2026-08-19):** https://github.com/Foodpapi/Avernus-Descent is live.
+  Workspace has `.git` tracking `origin/main`. Shipped commit:
+  **`65d5f03` — Add full game source through v=44**.
+  Earlier GitHub only had a web upload of root docs plus an accidental empty `node` file. That
+  commit added `src/`, `tools/`, `assets/` (incl. title art), `.gitignore`, deleted `node`, and
+  made `start.bat` launch `node tools/serve.js`.
+  **This CONTEXT_LOG update is local only** — it is *not* in `65d5f03`. Push later if the user
+  wants GitHub in sync (Contents: Read and write PAT; never store the token).
+- **Hide / LOS (v=44):** PHB: you can't hide from a creature that can see you clearly. Moving does
+  **not** break Hide unless a foe can now see you. Attacking gives away position **hit or miss**.
+  Hide fails if `whoCanSee` is non-empty (unless invisible). Failed Hide still spends the action.
+  Stealth `d20 + skillMod(Stealth)` logged; stored as `u.stealthScore`. Hidden = `u.hidden` plus
+  status `{id:'hidden', name:'Hidden', rounds:99}`. After each `moveUnit` step: check the mover if
+  hidden; also check other hidden units the mover can now see. Rogue **classLevel >= 2**: Cunning
+  Action Hide via `performAction({ type:'hide', asBonus:true })`. While the current player is
+  hidden, `drawEnemySight` paints red wash on tiles `tilesSeenBy` each **revealed** enemy.
+  Hidden sprites `globalAlpha = 0.55`. `STATUS_DESCRIPTIONS.hidden` in `src/data/features.js`.
+  `canSee` wraps `observerCanSeeTile`. Do **not** treat whole-floor `combat.darkness` as a hard
+  fail (game already models dim as reduced `u.vision`). Tests: `tools/hide_test.mjs`.
+- **Weapon projectiles (v=44):** `scheduleWeaponFx` in `combat_actions.js`: `kind:'arrow'` if
+  `weapon.range` starts with `ranged`, else `kind:'thrown'` if thrown property. Colors `#e8d8a0` /
+  `#c8a070`. Dur 380 / 460. Called from `weaponAttack`, `useItem` throw, `monsterAttack` ranged.
+  UI `drawSpellFx` `case 'proj'`: if `f.kind === 'arrow'|'thrown'`, draw an oriented shaft +
+  fletching instead of the spell orb.
 - **Title screen (v=42):** Full-bleed `assets/ui/title_screen.png` + veil + ember motes + gold gradient wordmark. Existing title buttons (Continue / New Hero, long-press debug unlock, How to Play, reset) are unchanged — only restyled.
 - **Projectiles / objects (v=43):** Ranged weapons, thrown weapons (dist > 1), thrown items, spell attacks, magic missile, and AoE-on-a-path now hit the first living body or blocking object (friendly fire). Mental/save spells (Hex, Hold Person, Sacred Flame, Vicious Mockery, Toll the Dead) are not projectiles. Destroyable objects stamp HP from `OBSTACLES`, have material resist/vuln/immune, sized HP bars, and inspect details. Walls/rifts/cliffs/flowers stay special-cased. AI skips shots that would hit an ally or object first. Tests: `tools/projectile_test.mjs`.
 - **Moonbeam recast (v=40/v=41):** While concentrating, **Recast Moonbeam** is an action with
@@ -333,17 +380,30 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   radiant save. v=41 adds the same hover AoE circle (plus tile fill) the first cast uses.
   Engine: `recastMoonbeam` + `MOONBEAM_MOVE_TILES`; turn action `recast_moonbeam`; UI row +
   `drawAimOverlay` recast branch. Tests: `tools/moonbeam_test.mjs`.
-- **Expected next requests:** new bug reports (with exact coordinates/classes/spells), requests to
-  adjust sound slots/volumes/wiring, possibly art refinements, or new feature ideas. Follow the
-  ritual + conventions above.
+- **Not implemented yet:** Halfling Naturally Stealthy / wood-elf Mask of the Wild (races.js
+  doesn't have those feature texts). Hearing / Passive Perception contested hide (only visual LOS
+  spotting). Whole-floor darkness is still reduced vision, not full heavily-obscured vs
+  non-darkvision.
+- **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
+  or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
+  stamp is **v=45**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
+  If they want GitHub updated too, commit + push (Contents write PAT; never commit secrets).
 
 ## 11. How to Resume in a New Chat
 
 Start a new conversation and say something like:
-"Continue the Avernus Descent project at /home/user/avernus-descent. Read CONTEXT_LOG.md first.
-Here's the new issue: ..."
-The workspace (including this file) persists across chats, so the next agent has everything it
-needs: architecture, conventions, ritual, pitfalls, and current state.
+
+"Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
+Latest shipped work is **v=44**. Stay ready for the next play-test bug or polish request."
+
+The workspace (including this file and `.git`) persists across chats. GitHub
+https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
+This handoff log update is newer than that commit.
+
+Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
+popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
+gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test
+sounds_test moonbeam_test projectile_test hide_test` + `headless.js`.
