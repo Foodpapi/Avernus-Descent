@@ -2,7 +2,7 @@
 
 import { makeRng, uid, clamp, ordinal, titleCase } from './rng.js';
 import { createCharacter, mod, computeAc, computeMaxHp, recomputeDerived, initResources, initSpellcasting, skillMod, savingThrowMod, attackBonusFor, spellSlotSummary, listCantripsKnown, listLeveledSpellsKnown, canCastSpell, highestSpellLevel, levelUpCharacter, computeSpeed, ABILITIES, ABILITY_FULL, WILD_SHAPES, wildShapeFormsFor, changeGearChar, weaponStatFor, hasFeat, grantFeat, spellRangeFor } from './5e/rules.js';
-import { RACES, RACE_MAP, RACE_FAMILIES, racesForFamily, SKILL_ABILITY, SKILL_LIST, isRaceFamily } from './data/races.js';
+import { RACES, RACE_MAP, RACE_FAMILIES, racesForFamily, SKILL_ABILITY, SKILL_LIST, isRaceFamily, dragonBreathFor } from './data/races.js';
 import { CLASSES, CLASS_MAP, ASI_LEVELS } from './data/classes.js';
 import { SPELLS, SPELL_MAP, cantripDmg } from './data/spells.js';
 import { CONSUMABLES, WEAPONS, ARMORS, SHOP_ITEMS } from './data/items.js';
@@ -1531,9 +1531,12 @@ function activateAbility(abId, closeFirst = true) {
     CS.pending = { type: 'ability', ability: abId };
     toast('Click an enemy');
   } else if (meta.target === 'cone') {
-    CS.mode = 'ability_cone';
-    CS.pending = { type: 'ability', ability: abId };
-    toast('Click a tile to aim (or an enemy)');
+    const breath = (abId === 'breath_weapon') ? dragonBreathFor(u.char) : null;
+    CS.mode = (breath && breath.shape === 'line') ? 'ability_line' : 'ability_cone';
+    CS.pending = { type: 'ability', ability: abId, breath };
+    toast(breath && breath.shape === 'line'
+      ? `Click a tile to aim your ${breath.type} line`
+      : 'Click a tile to aim (or an enemy)');
   } else {
     performAction(G.combat, u.id, { type: 'ability', ability: abId });
     afterPlayerAction();
@@ -3902,9 +3905,18 @@ export function handleCombatTileClick(tx, ty, button) {
       }
       break;
     }
-    case 'ability_cone': {
-      const dir = { dx: Math.sign(tx - u.x) || 1, dy: Math.sign(ty - u.y) };
-      performAction(combat, u.id, { type: 'ability', ability: cs.pending.ability, targetId: unitHere ? unitHere.id : null, direction: dir });
+    case 'ability_cone':
+    case 'ability_line': {
+      const dx = Math.sign(tx - u.x), dy = Math.sign(ty - u.y);
+      const dir = (Math.abs(tx - u.x) >= Math.abs(ty - u.y))
+        ? { dx: dx || 1, dy: 0 }
+        : { dx: 0, dy: dy || 1 };
+      performAction(combat, u.id, {
+        type: 'ability', ability: cs.pending.ability,
+        targetId: unitHere ? unitHere.id : null,
+        direction: dir,
+        aim: { x: tx, y: ty },
+      });
       cs.mode = 'idle';
       cs.pending = null;
       afterPlayerAction();

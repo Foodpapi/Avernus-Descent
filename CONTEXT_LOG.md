@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-22 (v=50 title-music boot fix)
+**Last updated:** 2026-08-22 (v=51 dragonborn breath + skill math)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=50"></script>` (**currently v=50** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=51"></script>` (**currently v=51** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -293,7 +293,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=50 → next is v=51.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=51 → next is v=52.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -355,7 +355,11 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** **v=50** — title music boot fix (root cause in section 3 audio.js note).
+- **Where we are:** **v=51** — dragonborn Breath Weapon actually deals damage, typed by ancestry.
+  Root cause: `useAbility('breath_weapon')` only walked a 3-tile *line* while the UI previewed a *cone*, so anyone off the center axis (how players actually aim) took 0 damage. Casters also used `spellSaveDC` instead of the PHB CON DC. Ancestry `dragonType` existed on the race but the engine did not expand acid/lightning into a 5×30 ft line.
+  Fix: `dragonBreathFor()` (type + cone/line from ancestry). Cone uses `coneTilesFor` (matches preview). Acid/lightning use `lineTilesFor` (6 tiles). DC = 8 + CON + prof. DEX saves use `savingThrowMod` for PCs. FX cone/line flash. UI aims `ability_line` for line ancestries.
+  Skills scan: `skillMod` now null-safe; proficiency / expertise (double prof) / Jack of All Trades (bard 2+) match 5e. Breath test: `tools/breath_test.mjs`.
+- **Prior:** **v=50** — title music boot fix (root cause in section 3 audio.js note).
   The user dropped `assets/sounds/music/title.mp3`; SFX played but the title track stayed
   silent. Cause: `titleScreen()` → `screen('title')` → `Audio.setScene('title')` runs at boot,
   BEFORE the AudioContext exists (it is created on the first gesture). The old
@@ -434,7 +438,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=51**.
+  stamp is **v=52**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -445,11 +449,11 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=50** (title-music boot fix). Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=51** (dragonborn breath + skill math). Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update (now v=50 title-music boot fix) is newer than that commit.
+This handoff log update (now v=51 dragonborn breath) is newer than that commit.
 
 Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test

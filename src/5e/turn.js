@@ -1,15 +1,16 @@
 // Turn executor: performs an action for the current unit (used by player UI
 // and enemy AI alike), then advances the turn when the unit is done.
 
-import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat } from './rules.js';
+import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat, savingThrowMod } from './rules.js';
 import { OBSTACLES } from '../data/locations.js';
-import { applyMonsterAttackFx, wildShapeInto, revertWildShape, wildShapeAttack, recastHex, recastMoonbeam } from './combat_actions.js';
+import { applyMonsterAttackFx, wildShapeInto, revertWildShape, wildShapeAttack, recastHex, recastMoonbeam, coneTilesFor, lineTilesFor } from './combat_actions.js';
 import { WEAPONS, FISTS, CONSUMABLES } from '../data/items.js';
+import { dragonBreathFor } from '../data/races.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import {
   unitAt, getStatus, addStatus, removeStatus, unitAc, findPath, isPassable, hasLOS, inBounds, elevationAt,
   startOfTurnReset, currentUnit, alivePlayers, aliveEnemies, attackRoll,
-  hasAction, hasBonus, spendAction, spendBonus, pushPopup,
+  hasAction, hasBonus, spendAction, spendBonus, pushPopup, pushFx,
 } from './combat.js';
 import {
   log, moveUnit, weaponAttack, castSpell, useItem, applyDamage, healUnit, endTurn, skipTurn,
@@ -646,25 +647,35 @@ export function useAbility(combat, u, abilityId, action) {
       if (!res.breathWeapon || res.breathWeapon.cur <= 0) { log(combat, 'Breath weapon used.'); Audio.play('ui/error', { vol: 0.5, throttle: 120 }); return; }
       res.breathWeapon.cur--;
       spendAction(u);
+      const breath = dragonBreathFor(char);
+      const type = breath.type;
+      const shape = breath.shape;
       Audio.play('units/roar', { vol: 0.8 });
-      Audio.play(`spells/${char.dragonType || 'fire'}`, { vol: 0.75, delay: 120 });
+      Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
       const dir = action.direction || { dx: 1, dy: 0 };
+      const aim = action.aim || (action.targetId ? (combat.units.find(x => x.id === action.targetId) || null) : null);
+      const tiles = shape === 'line'
+        ? lineTilesFor(combat, u, aim || { x: u.x + dir.dx, y: u.y + dir.dy }, 6, dir)
+        : coneTilesFor(combat, u, aim || { x: u.x + dir.dx, y: u.y + dir.dy }, 3, dir);
       const dmgDice = char.level >= 16 ? '5d6' : char.level >= 11 ? '4d6' : char.level >= 6 ? '3d6' : '2d6';
-      const type = char.dragonType || 'fire';
-      const dc = char.spellSaveDC || (8 + char.prof + mod(char.abilities.CON));
-      for (let i = 1; i <= 3; i++) {
-        const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
-        if (!inBounds(combat, x, y)) break;
-        const t = combat.grid[y][x];
-        if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
-        const e = unitAt(combat, x, y);
-        if (!e) continue;
+      // PHB: DC = 8 + CON modifier + proficiency bonus (never the spell DC).
+      const dc = 8 + (char.prof || 2) + mod(char.abilities.CON);
+      const FX_COLOR = { fire: '#ff6a2a', acid: '#7ae05a', lightning: '#ffe83c', cold: '#6ac2ff', poison: '#c87ae8' };
+      pushFx(combat, { type: shape === 'line' ? 'line' : 'cone', tiles, color: FX_COLOR[type] || '#ff6a2a', dur: 700, x: u.x, y: u.y });
+      log(combat, `🐉 ${u.name} exhales a ${shape === 'line' ? 'line' : 'cone'} of ${type}! (DC ${dc} DEX)`);
+      const hitIds = new Set();
+      for (const tile of tiles) {
+        const e = unitAt(combat, tile.x, tile.y);
+        if (!e || e.dead || e.id === u.id || hitIds.has(e.id)) continue;
+        hitIds.add(e.id);
         const dmg = roll(rng, dmgDice);
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + e.char.prof);
+        let saveBonus;
+        if (e.char.stats) saveBonus = mod(e.char.stats.DEX);
+        else saveBonus = savingThrowMod(e.char, 'DEX');
+        const save = d20(rng) + saveBonus;
         if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), type, { aoe: true, magical: true });
         else applyDamage(combat, e, u, dmg, type, { aoe: true, magical: true });
       }
-      log(combat, `🐉 ${u.name} exhales a blast of ${type}!`);
       break;
     }
     case 'hurl_flame': {

@@ -149,19 +149,32 @@ const TIEFLING_CORE = [
   F('Hellish Resistance', 'Resistance to fire damage.'),
 ];
 
+// PHB: acid & lightning ancestries breathe a 5×30 ft line; the rest a 15-ft cone.
+const LINE_BREATH_TYPES = new Set(['acid', 'lightning']);
+
 function dragonbornAncestry(id, name, type, colorWord) {
+  const shape = LINE_BREATH_TYPES.has(type) ? 'line' : 'cone';
+  const shapeText = shape === 'line' ? '6-tile line' : '3-tile cone';
   return playable({
     id, family: 'dragonborn', name,
     asi: { STR: 2, CHA: 1 },
     speed: 30, size: 'Medium', darkvision: false,
     dragonType: type,
+    breathShape: shape,
     resist: [type],
-    desc: `${colorWord} dragonborn. +2 STR, +1 CHA. Breath and resistance: ${type}.`,
+    desc: `${colorWord} dragonborn. +2 STR, +1 CHA. Breath and resistance: ${type} (${shapeText}).`,
     features: [
-      F('Breath Weapon', `Once per floor, exhale a 3-tile cone of ${type} (DEX save for half).`),
+      F('Breath Weapon', `Once per floor, exhale a ${shapeText} of ${type} (DEX save vs 8 + CON + prof for half).`),
       F('Draconic Resistance', `Resistance to ${type} damage.`),
     ],
   });
+}
+
+export function dragonBreathFor(char) {
+  const race = (char && char.race) || (char && char.raceId && RACE_MAP[char.raceId]);
+  const type = (char && char.dragonType) || (race && race.dragonType) || 'fire';
+  const shape = (char && char.breathShape) || (race && race.breathShape) || (LINE_BREATH_TYPES.has(type) ? 'line' : 'cone');
+  return { type, shape };
 }
 
 function tieflingBloodline(id, name, asi, extraFeature, opts = {}) {

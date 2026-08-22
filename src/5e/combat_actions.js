@@ -1233,7 +1233,30 @@ export function coneTilesFor(combat, caster, aim, size, direction) {
   return tiles;
 }
 
+// PHB dragonborn lightning/acid breath: 5×30 ft line (6 tiles).
+export function lineTilesFor(combat, caster, aim, len, direction) {
+  const tiles = [];
+  let dir = direction;
+  if (!dir && aim) dir = optsDir(aim, caster);
+  if (!dir) dir = { dx: caster.team === 'player' ? 1 : -1, dy: 0 };
+  if (dir.dx !== 0 && dir.dy !== 0) {
+    dir = Math.abs(aim && aim.x != null ? aim.x - caster.x : dir.dx) >= Math.abs(aim && aim.y != null ? aim.y - caster.y : dir.dy)
+      ? { dx: Math.sign(dir.dx) || 1, dy: 0 }
+      : { dx: 0, dy: Math.sign(dir.dy) || 1 };
+  }
+  for (let i = 1; i <= (len || 6); i++) {
+    const x = caster.x + dir.dx * i, y = caster.y + dir.dy * i;
+    if (!inBounds(combat, x, y)) break;
+    const t = combat.grid[y] && combat.grid[y][x];
+    const obDef = t && t.obstacle ? OBSTACLES[t.obstacle] : null;
+    if (obDef && obDef.tall) break;
+    tiles.push({ x, y });
+  }
+  return tiles;
+}
+
 function optsDir(aim, caster) {
+  if (!aim || aim.x == null || aim.y == null) return null;
   if (aim.x === caster.x && aim.y === caster.y) return null;
   const dx = Math.sign(aim.x - caster.x), dy = Math.sign(aim.y - caster.y);
   if (dx === 0 && dy === 0) return null;

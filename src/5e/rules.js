@@ -115,6 +115,7 @@ export function applyRacialMagic(char) {
     if (char.featCasts[sid] !== false) char.featCasts[sid] = true;
   }
   if (race.dragonType) char.dragonType = race.dragonType;
+  if (race.breathShape) char.breathShape = race.breathShape;
   if (race.naturallyStealthy) char.naturallyStealthy = true;
   if (race.maskOfTheWild) char.maskOfTheWild = true;
 }
