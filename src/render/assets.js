@@ -6,6 +6,8 @@
 // keeps working. When a load succeeds, the tile/sprite caches are cleared so
 // the next frame renders the new art.
 
+import { RACE_MAP } from '../data/races.js';
+
 const BASE = 'assets/';
 
 const imageCache = new Map(); // path -> HTMLImageElement | null (null = missing/errored)
@@ -105,7 +107,24 @@ export function unitAssetPaths(u) {
   } else if (char.wildShapeForm) {
     out.push(`units/form_${char.wildShapeForm.id}.png`);
   } else {
-    out.push(`units/race_${char.raceId}_${char.classId}.png`); // optional race skin
+    // Optional race skins, in priority order (each falls through on a 404):
+    //   1. per-subrace skin: units/race_{family}_{subrace}_{class}.png
+    //   2. family skin:      units/race_{family}_{class}.png
+    //   3. class sprite:     units/class_{class}.png
+    // The caller draws the procedural placeholder when none of these load.
+    // ASSET_PROMPT.md and assets/manifest.json key race skins by the race
+    // FAMILY token (human/elf/dwarf/halfling/halfelf/half_orc/tiefling/gnome/
+    // dragonborn). A lineage such as wood_elf resolves to family 'elf'; the
+    // lineage's own id becomes the {subrace} token in the per-subrace name.
+    const fam =
+      (char.race && char.race.family) ||
+      (char.raceId && RACE_MAP[char.raceId] && RACE_MAP[char.raceId].family) ||
+      char.raceId;
+    const sub = char.raceId || (char.race && char.race.id);
+    // Only try a distinct subrace skin when the lineage differs from the
+    // family (otherwise it'd duplicate the family path and 404 needlessly).
+    if (sub && sub !== fam) out.push(`units/race_${fam}_${sub}_${char.classId}.png`);
+    out.push(`units/race_${fam}_${char.classId}.png`);
     out.push(`units/class_${char.classId}.png`);
   }
   return out;

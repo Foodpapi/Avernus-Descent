@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-21 (v=47 race → subrace character creation)
+**Last updated:** 2026-08-22 (v=49 per-subrace race skin support)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=47"></script>` (**currently v=47** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=49"></script>` (**currently v=49** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -290,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=47 → next is v=48.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=49 → next is v=50.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -352,8 +352,19 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Hidden enemy-sight overlay restored/strengthened at **v=46**.
-  Next ship is **v=47**.
+- **Where we are:** Per-subrace race skin support at **v=49**.
+- **Race skins v=49 (loading priority):** `unitAssetPaths` in `src/render/assets.js` now tries,
+  in order, for a player character: (1) `units/race_{family}_{subrace}_{class}.png` (per-subrace
+  skin, only when the lineage differs from the family), (2) `units/race_{family}_{class}.png`
+  (family skin), (3) `units/class_{class}.png` (class sprite), (4) procedural placeholder (drawn
+  by the caller when no art loads). {family} is the race FAMILY token (human/elf/dwarf/halfling/
+  halfelf/half_orc/tiefling/gnome/dragonborn) and {subrace} is the specific lineage id (e.g.
+  `wood_elf`, `mountain_dwarf`, `dragonborn_black`, `tiefling_baalzebul`, `human_variant`).
+  Example: a wood-elf fighter tries `race_elf_wood_elf_fighter.png` → `race_elf_fighter.png` →
+  `class_fighter.png`. Subrace slots are intentionally NOT in the manifest yet (so the loading
+  screen doesn't 404-load ~100 missing files); the drop-in loader picks them up lazily on first
+  draw. Regenerate the manifest later if you want them preloaded. (v=48 established the family
+  skin decoupling from `char.raceId`; v=49 adds the per-subrace layer on top.)
 - **GitHub (this chat, 2026-08-19):** https://github.com/Foodpapi/Avernus-Descent is live.
   Workspace has `.git` tracking `origin/main`. Shipped commit:
   **`65d5f03` — Add full game source through v=44**.
@@ -408,7 +419,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=47**.
+  stamp is **v=50**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -419,11 +430,11 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=46**. Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=49** (per-subrace race skin support). Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update (v=46 hidden sight overlay) is newer than that commit.
+This handoff log update (now v=49 per-subrace race skins) is newer than that commit.
 
 Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
