@@ -1,0 +1,1335 @@
+diff --git a/CONTEXT_LOG.md b/CONTEXT_LOG.md
+index 8cc69e3..0107910 100644
+--- a/CONTEXT_LOG.md
++++ b/CONTEXT_LOG.md
+@@ -1,5 +1,5 @@
+ # AVERNUS DESCENT — PROJECT CONTEXT LOG
+-**Last updated:** 2026-08-19 (v=46 hidden enemy-sight overlay)
++**Last updated:** 2026-08-21 (v=47 race → subrace character creation)
+ **Purpose:** This file is the complete hand-off document for continuing development.
+ A new chat can restore full context by reading this file (it lives in the workspace at
+ `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
+@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
+ 
+ ## 3. Architecture (exact file map)
+ 
+-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=46"></script>` (**currently v=46** — bump each ship).
++- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=47"></script>` (**currently v=47** — bump each ship).
+ - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
+ - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
+   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
+@@ -54,7 +54,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
+   sounds, mute button + M key.
+ - `src/rng.js` — `makeRng` (mulberry32), `uid`, `clamp`, `ordinal`, `weighted`, `sample`, `deepClone`.
+ - `src/data/`:
+-  - `races.js` — **10 races** (High Elf + Wood Elf; Halfling has `naturallyStealthy`), `SKILL_LIST`, `SKILL_ABILITY`.
++  - `races.js` — **9 PHB families** (`RACE_FAMILIES`) and flattened playable lineages (`RACES` / `RACE_MAP`). Subraces: Hill/Mountain Dwarf, High/Wood/Drow Elf, Lightfoot/Stout Halfling, Forest/Rock Gnome, Standard/Variant Human, 10 Dragonborn ancestries, 4 Half-Elf heritages, Half-Orc, 9 Tiefling bloodlines (PHB Asmodeus + SCAG). Helpers: `racesForFamily`, `raceFamilyOf`, `isRaceFamily`. Lightfoot keeps id `halfling` + `naturallyStealthy`; Wood Elf keeps `wood_elf` + `maskOfTheWild`. `SKILL_LIST`, `SKILL_ABILITY`.
+   - `classes.js` — 12 classes; `AST_LEVELS=[4,8,12,16,19]`; **`extraAsi: [6,14]` on fighter, `[10]`
+     on rogue**; slot tables `FULL_CASTER_SLOTS`/`HALF_CASTER_SLOTS`/`WARLOCK_SLOTS`; `CANTRIP_COUNTS`.
+   - `spells.js` — **101 spells**, `SPELL_MAP`, `SPELL_LISTS`, `cantripDmg`, ~35 `concentration: true`
+@@ -290,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
+ 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
+    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
+    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
+-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=46 → next is v=47.
++3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=47 → next is v=48.
+ 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
+ 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
+    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
+diff --git a/index.html b/index.html
+index ed10d7b..8870490 100644
+--- a/index.html
++++ b/index.html
+@@ -10,6 +10,6 @@
+ <div id="app">
+   <div id="ui"></div>
+ </div>
+-<script type="module" src="src/main.js?v=46"></script>
++<script type="module" src="src/main.js?v=47"></script>
+ </body>
+ </html>
+diff --git a/src/5e/combat.js b/src/5e/combat.js
+index e983516..a6ef9d9 100644
+--- a/src/5e/combat.js
++++ b/src/5e/combat.js
+@@ -7,7 +7,7 @@ import { WEAPONS, FISTS, ARMORS, ENCHANTMENTS, CONSUMABLES } from '../data/items
+ import { SPELL_MAP, cantripDmg } from '../data/spells.js';
+ import { MONSTERS, ELITE_TRAITS, xpForCr } from '../data/monsters.js';
+ import { LOCATION_MAP, OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
+-import { RACE_MAP } from '../data/races.js';
++import { RACE_MAP, isRaceFamily } from '../data/races.js';
+ import { clamp, uid } from '../rng.js';
+ 
+ export const DMG_TYPES = ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder'];
+@@ -353,6 +353,7 @@ export function hasNaturallyStealthy(u) {
+   if (!c) return false;
+   if (c.naturallyStealthy) return true;
+   if (c.race && c.race.naturallyStealthy) return true;
++  // Legacy saves: Lightfoot kept the id `halfling`
+   return c.raceId === 'halfling';
+ }
+ 
+@@ -361,7 +362,7 @@ export function hasMaskOfTheWild(u) {
+   if (!c) return false;
+   if (c.maskOfTheWild) return true;
+   if (c.race && c.race.maskOfTheWild) return true;
+-  return c.raceId === 'wood_elf';
++  return c.raceId === 'wood_elf' || c.raceId === 'halfelf_wood';
+ }
+ 
+ export function isObscuredByLargerCreature(combat, hider, observer) {
+@@ -576,8 +577,8 @@ export function attackRoll(rng, combat, u, target, bonus, opts = {}) {
+   if (adv && !dis) { const a = d20(rng), b = d20(rng); result = Math.max(a, b); second = Math.min(a, b); }
+   else if (dis && !adv) { const a = d20(rng), b = d20(rng); result = Math.min(a, b); second = Math.max(a, b); }
+ 
+-  // Halfling Lucky: reroll nat 1 once
+-  if (u.char && u.char.raceId === 'halfling' && result === 1) result = d20(rng);
++  // Halfling Lucky: reroll nat 1 once (every halfling subrace)
++  if (u.char && isRaceFamily(u.char, 'halfling') && result === 1) result = d20(rng);
+   // Lucky feat: poor natural rolls automatically reroll (3 points per floor)
+   if (u.char && hasFeat(u.char, 'lucky') && u.char.resources && u.char.resources.luck && u.char.resources.luck.cur > 0 && result <= 10) {
+     u.char.resources.luck.cur--;
+@@ -696,7 +697,8 @@ export function updateVision(combat) {
+   for (const u of combat.units) {
+     if (u.dead || u.overboard) continue;
+     if (u.team !== 'player') continue;
+-    const vis = u.char && u.char.raceId && RACE_MAP[u.char.raceId].darkvision ? 8 : u.vision;
++    const raceDef = u.char && u.char.raceId && RACE_MAP[u.char.raceId];
++    const vis = raceDef && raceDef.darkvision ? Math.max(u.vision || 8, raceDef.superiorDarkvision ? 16 : 8) : u.vision;
+     for (let y = Math.max(0, u.y - vis); y <= Math.min(combat.h - 1, u.y + vis); y++)
+       for (let x = Math.max(0, u.x - vis); x <= Math.min(combat.w - 1, u.x + vis); x++) {
+         const d = Math.abs(u.x - x) + Math.abs(u.y - y);
+@@ -721,7 +723,8 @@ export function spawnEncounter(combat, party, floor, rng, opts = {}) {
+   party.forEach((char, i) => {
+     if (char.dead) return;
+     const u = makeUnit(char, 'player', sx, sy0 + i);
+-    u.vision = char.race && char.race.darkvision ? 12 : (combat.darkness ? 4 : 8);
++    u.vision = char.race && char.race.superiorDarkvision ? 24
++      : (char.race && char.race.darkvision ? 12 : (combat.darkness ? 4 : 8));
+     units.push(u);
+   });
+ 
+diff --git a/src/5e/combat_actions.js b/src/5e/combat_actions.js
+index 2f60195..906b9ef 100644
+--- a/src/5e/combat_actions.js
++++ b/src/5e/combat_actions.js
+@@ -4,7 +4,7 @@
+ import { mod, attackBonusFor, weaponDiceFor, weaponStatFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, spellSlotSummary, canCastSpell, computeSpeed, WILD_SHAPES, townMod, hasFeat, skillMod, passivePerception } from './rules.js';
+ import { WEAPONS, FISTS, CONSUMABLES, ENCHANTMENTS, ARMORS } from '../data/items.js';
+ import { SPELL_MAP, cantripDmg } from '../data/spells.js';
+-import { RACE_MAP } from '../data/races.js';
++import { RACE_MAP, isRaceFamily } from '../data/races.js';
+ import { OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
+ import { clamp } from '../rng.js';
+ import * as Audio from '../game/audio.js';
+@@ -47,7 +47,7 @@ function rollStealth(combat, u) {
+   const bonus = stealthBonusFor(u);
+   const rollOnce = () => {
+     let n = d20(combat.rng);
+-    if (u.char && u.char.raceId === 'halfling' && n === 1) n = d20(combat.rng);
++    if (u.char && isRaceFamily(u.char, 'halfling') && n === 1) n = d20(combat.rng);
+     return n;
+   };
+   let a = rollOnce();
+diff --git a/src/5e/rules.js b/src/5e/rules.js
+index 46a7499..55c4437 100644
+--- a/src/5e/rules.js
++++ b/src/5e/rules.js
+@@ -1,7 +1,7 @@
+ // Core 5e rules: ability modifiers, proficiency, character creation,
+ // AC, HP, leveling, gear. Combat resolution lives in combat.js.
+ 
+-import { RACE_MAP, baseAbilityScores, SKILL_ABILITY } from '../data/races.js';
++import { RACE_MAP, baseAbilityScores, SKILL_ABILITY, isRaceFamily } from '../data/races.js';
+ import { CLASS_MAP, PROF_BY_LEVEL, ASI_LEVELS, attacksPerAction, spellSlotsAt, pactSlotsAt, CANTRIP_COUNTS } from '../data/classes.js';
+ import { SPELL_MAP, SPELL_LISTS, cantripDmg } from '../data/spells.js';
+ import { WEAPONS, ARMORS, SHIELDS, FISTS } from '../data/items.js';
+@@ -96,7 +96,30 @@ export const PERSONALITIES = ['Bold', 'Cautious', 'Greedy', 'Noble', 'Sarcastic'
+ 
+ // ---- Character creation ----
+ // scorePool: array of 6 values (standard array) to be placed on abilities.
+-export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng }) {
++export function applyRacialMagic(char) {
++  const race = char.race || RACE_MAP[char.raceId];
++  if (!race) return;
++  char.featCantrips = char.featCantrips || [];
++  char.featSpells = char.featSpells || [];
++  char.featCasts = char.featCasts || {};
++  char.spellsKnown = char.spellsKnown || [];
++  for (const sid of (race.bonusCantrips || [])) {
++    if (!SPELL_MAP[sid]) continue;
++    if (!char.spellsKnown.includes(sid)) char.spellsKnown.push(sid);
++    if (!char.featCantrips.includes(sid)) char.featCantrips.push(sid);
++  }
++  for (const sid of (race.racialSpells || [])) {
++    if (!SPELL_MAP[sid]) continue;
++    if (!char.spellsKnown.includes(sid)) char.spellsKnown.push(sid);
++    if (!char.featSpells.includes(sid)) char.featSpells.push(sid);
++    if (char.featCasts[sid] !== false) char.featCasts[sid] = true;
++  }
++  if (race.dragonType) char.dragonType = race.dragonType;
++  if (race.naturallyStealthy) char.naturallyStealthy = true;
++  if (race.maskOfTheWild) char.maskOfTheWild = true;
++}
++
++export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng, racialChoices = null }) {
+   const race = RACE_MAP[raceId];
+   const cls = CLASS_MAP[classId];
+   const abilities = baseAbilityScores();
+@@ -139,11 +162,27 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
+     personality: hero ? 'The Hero' : rng.pick(PERSONALITIES),
+     wildShaped: false,
+     size: race.size || 'Medium',
+-    vision: race.darkvision ? 12 : 8,
++    vision: race.superiorDarkvision ? 24 : (race.darkvision ? 12 : 8),
+   };
+ 
+   // Racial ASIs
+-  for (const [ab, val] of Object.entries(race.asi)) abilities[ab] += val;
++  for (const [ab, val] of Object.entries(race.asi || {})) abilities[ab] += val;
++  const choices = racialChoices || {};
++  if (race.variantHuman) {
++    let asiPicks = Array.isArray(choices.asi) ? choices.asi.filter(a => ABILITIES.includes(a)) : [];
++    asiPicks = [...new Set(asiPicks)].slice(0, 2);
++    if (asiPicks.length < 2) {
++      const leftover = ABILITIES.filter(a => !asiPicks.includes(a));
++      while (asiPicks.length < 2 && leftover.length) asiPicks.push(leftover.shift());
++    }
++    for (const ab of asiPicks) abilities[ab] += 1;
++    char.racialChoices = {
++      asi: asiPicks,
++      skill: choices.skill || null,
++      featId: choices.featId || null,
++      featChoice: choices.featChoice || null,
++    };
++  }
+   char.baseAbilities = { ...abilities };
+ 
+   // Skills
+@@ -152,6 +191,11 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
+   const picks = rng.shuffle(skillChoices).slice(0, nSkills);
+   char.skills = picks;
+   if (race.bonusSkills) for (const s of race.bonusSkills) if (!char.skills.includes(s)) char.skills.push(s);
++  if (race.variantHuman) {
++    const sk = (char.racialChoices && char.racialChoices.skill) || rng.pick(Object.keys(SKILL_ABILITY));
++    if (char.racialChoices) char.racialChoices.skill = sk;
++    if (!char.skills.includes(sk)) char.skills.push(sk);
++  }
+   if (classId === 'rogue') {
+     const exp = rng.shuffle(Object.keys(SKILL_ABILITY)).slice(0, 2);
+     char.skillExpertise = exp;
+@@ -163,6 +207,9 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
+     if (feats) for (const f of feats) char.features.push(f);
+   }
+ 
++  // Racial cantrips / once-per-floor spells (High Elf, Drow, Tiefling bloodlines…)
++  applyRacialMagic(char);
++
+   // HP
+   recomputeDerived(char);
+ 
+@@ -175,6 +222,14 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
+   // Resources per floor
+   initResources(char);
+ 
++  // Variant Human feat — after the sheet exists so grantFeat can mutate it
++  if (race.variantHuman) {
++    const featId = (char.racialChoices && char.racialChoices.featId) || 'tough';
++    const featChoice = char.racialChoices ? char.racialChoices.featChoice : null;
++    if (char.racialChoices) char.racialChoices.featId = featId;
++    grantFeat(char, featId, featChoice, rng);
++  }
++
+   char.maxHp = computeMaxHp(char);
+   char.hp = char.maxHp;
+   return char;
+@@ -204,6 +259,7 @@ export function computeMaxHp(char) {
+   let hp = die + conModHere + (classLevel(char) - 1) * (avg + conModHere);
+   if (cls.id === 'sorcerer' && char.subclassId === 'draconic') hp += classLevel(char);
+   if (hasFeat(char, 'tough')) hp += char.level * 2;
++  if (char.race && char.race.hpPerLevel) hp += char.level * char.race.hpPerLevel;
+   hp += townMod(char, 'hp') * 5;
+   const aid = char.buffs.find(b => b.id === 'aid');
+   if (aid) hp += aid.value || 5;
+@@ -438,8 +494,8 @@ export function initResources(char) {
+       break;
+   }
+   // racial once-per-floor
+-  if (char.raceId === 'dragonborn') char.resources.breathWeapon = { max: 1, cur: 1 };
+-  if (char.raceId === 'half_orc') char.resources.relentlessEndurance = { max: 1, cur: 1 };
++  if (isRaceFamily(char, 'dragonborn')) char.resources.breathWeapon = { max: 1, cur: 1 };
++  if (isRaceFamily(char, 'half_orc')) char.resources.relentlessEndurance = { max: 1, cur: 1 };
+   // multiclass resources
+   initMulticlassResources(char);
+   // feat resources
+diff --git a/src/data/races.js b/src/data/races.js
+index c98f383..e381431 100644
+--- a/src/data/races.js
++++ b/src/data/races.js
+@@ -1,121 +1,439 @@
+-// D&D 5e (2014 PHB) playable races. Each gives ability score increases,
+-// speed, size, and a couple of combat-relevant features.
++// D&D 5e playable races (2014 PHB + SCAG lineages).
++// Families appear in character creation; a lineage/subrace is chosen next
++// when one exists. Engine lookups still key off the specific playable id.
+ 
+-export const RACES = [
++const F = (name, text) => ({ name, text });
++
++export const RACE_FAMILIES = [
+   {
+-    id: 'human', name: 'Human', hpMult: 1.0,
+-    asi: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 },
++    id: 'human', name: 'Human',
++    choiceLabel: 'heritage',
+     speed: 30, size: 'Medium', darkvision: false,
+-    desc: 'Versatile and ambitious. +1 to every ability score.',
+-    features: [{ name: 'Human Versatility', text: '+1 to all ability scores.' }],
++    desc: 'Versatile and ambitious. Choose a standard human or the Variant Human.',
++    features: [F('Human Versatility', 'Humans adapt faster than any other folk.')],
++    lineageNote: '2 heritages',
+   },
+   {
+-    id: 'elf', name: 'High Elf', hpMult: 1.0,
+-    asi: { DEX: 2, INT: 1 },
+-    speed: 30, size: 'Medium', darkvision: true,
+-    desc: 'Graceful and keen-eyed. +2 DEX, +1 INT.',
++    id: 'dwarf', name: 'Dwarf',
++    choiceLabel: 'subrace',
++    speed: 25, size: 'Medium', darkvision: true,
++    desc: 'Stout and unyielding. Hill and mountain dwarves walk different paths.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Keen Senses', text: 'Proficiency in Perception.' },
+-      { name: 'Fey Ancestry', text: 'Advantage on saves vs. being charmed.' },
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Dwarven Resilience', 'Advantage on saves vs. poison; resistance to poison damage.'),
+     ],
+-    bonusSkills: ['Perception'],
++    lineageNote: '2 subraces',
+   },
+   {
+-    id: 'dwarf', name: 'Dwarf', hpMult: 1.0,
+-    asi: { CON: 2, WIS: 1 },
+-    speed: 25, size: 'Medium', darkvision: true,
+-    desc: 'Stout and unyielding. +2 CON, +1 WIS.',
++    id: 'elf', name: 'Elf',
++    choiceLabel: 'subrace',
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Graceful and long-lived. High elves, wood elves and drow each claim a different birthright.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Dwarven Resilience', text: 'Advantage on saves vs. poison; resistance to poison damage.' },
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Keen Senses', 'Proficiency in Perception.'),
++      F('Fey Ancestry', 'Advantage on saves vs. being charmed.'),
+     ],
+-    resist: ['poison'],
++    lineageNote: '3 subraces',
+   },
+   {
+-    id: 'halfling', name: 'Halfling', hpMult: 1.0,
+-    asi: { DEX: 2, CHA: 1 },
++    id: 'halfling', name: 'Halfling',
++    choiceLabel: 'subrace',
+     speed: 25, size: 'Small', darkvision: false,
+-    desc: 'Lucky and nimble. +2 DEX, +1 CHA.',
+-    naturallyStealthy: true,
++    desc: 'Lucky and nimble. Lightfoot and stout halflings hide — or endure — in different ways.',
+     features: [
+-      { name: 'Lucky', text: 'When you roll a 1 on an attack, ability check or save, you may reroll the die once.' },
+-      { name: 'Brave', text: 'Advantage on saves vs. being frightened.' },
+-      { name: 'Naturally Stealthy', text: 'You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you.' },
++      F('Lucky', 'When you roll a 1 on an attack, ability check or save, you may reroll the die once.'),
++      F('Brave', 'Advantage on saves vs. being frightened.'),
+     ],
++    lineageNote: '2 subraces',
+   },
+   {
+-    id: 'halfelf', name: 'Half-Elf', hpMult: 1.0,
+-    asi: { CHA: 2, DEX: 1, CON: 1 },
+-    speed: 30, size: 'Medium', darkvision: true,
+-    desc: 'Charming and adaptable. +2 CHA, +1 DEX, +1 CON.',
++    id: 'dragonborn', name: 'Dragonborn',
++    choiceLabel: 'draconic ancestry',
++    speed: 30, size: 'Medium', darkvision: false,
++    desc: 'Draconic warriors. Your ancestry decides the element of your breath and your hide.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Fey Ancestry', text: 'Advantage on saves vs. being charmed.' },
+-      { name: 'Skill Versatility', text: 'Proficiency in two skills of your choice (simplified: +1 to two skills).' },
++      F('Breath Weapon', 'Once per floor, exhale a 3-tile cone of your ancestral element.'),
++      F('Draconic Resistance', 'Resistance to the damage type of your draconic ancestry.'),
+     ],
++    lineageNote: '10 ancestries',
+   },
+   {
+-    id: 'half_orc', name: 'Half-Orc', hpMult: 1.0,
+-    asi: { STR: 2, CON: 1 },
+-    speed: 30, size: 'Medium', darkvision: true,
+-    desc: 'Fierce survivors. +2 STR, +1 CON.',
++    id: 'gnome', name: 'Gnome',
++    choiceLabel: 'subrace',
++    speed: 25, size: 'Small', darkvision: true,
++    desc: 'Clever tinkerers. Forest gnomes weave illusions; rock gnomes invent.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Relentless Endurance', text: 'Once per floor, when you would drop to 0 HP, drop to 1 HP instead.' },
+-      { name: 'Savage Attacks', text: 'Critical hits deal one extra weapon die.' },
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Gnome Cunning', 'Advantage on INT, WIS and CHA saves vs. magic.'),
+     ],
++    lineageNote: '2 subraces',
+   },
+   {
+-    id: 'tiefling', name: 'Tiefling', hpMult: 1.0,
+-    asi: { CHA: 2, INT: 1 },
++    id: 'halfelf', name: 'Half-Elf',
++    choiceLabel: 'heritage',
+     speed: 30, size: 'Medium', darkvision: true,
+-    desc: 'Infernal-blooded outcasts. +2 CHA, +1 INT.',
++    desc: 'Charming and adaptable. Standard half-elves, or a high, wood or drow heritage.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Hellish Resistance', text: 'Resistance to fire damage.' },
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Fey Ancestry', 'Advantage on saves vs. being charmed.'),
++      F('Skill Versatility', 'Proficiency in two skills of your choice (simplified: +1 to two skills).'),
+     ],
+-    resist: ['fire'],
++    lineageNote: '4 heritages',
+   },
+   {
+-    id: 'gnome', name: 'Gnome', hpMult: 1.0,
+-    asi: { INT: 2, CON: 1 },
+-    speed: 25, size: 'Small', darkvision: true,
+-    desc: 'Clever tinkerers. +2 INT, +1 CON.',
++    id: 'half_orc', name: 'Half-Orc',
++    choiceLabel: null,
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Fierce survivors. +2 STR, +1 CON.',
+     features: [
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Gnome Cunning', text: 'Advantage on INT, WIS and CHA saves vs. magic.' },
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Relentless Endurance', 'Once per floor, when you would drop to 0 HP, drop to 1 HP instead.'),
++      F('Savage Attacks', 'Critical hits deal one extra weapon die.'),
+     ],
++    lineageNote: null,
+   },
+   {
+-    id: 'dragonborn', name: 'Dragonborn', hpMult: 1.0,
++    id: 'tiefling', name: 'Tiefling',
++    choiceLabel: 'infernal bloodline',
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Infernal-blooded outcasts. The nine archdevils each leave a different mark.',
++    features: [
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Hellish Resistance', 'Resistance to fire damage.'),
++    ],
++    lineageNote: '9 bloodlines',
++  },
++];
++
++export const RACE_FAMILY_MAP = Object.fromEntries(RACE_FAMILIES.map(f => [f.id, f]));
++
++function playable(def) {
++  return {
++    hpMult: 1.0,
++    darkvision: false,
++    features: [],
++    ...def,
++  };
++}
++
++const ELF_CORE = [
++  F('Darkvision', 'You see perfectly in dim light and darkness.'),
++  F('Keen Senses', 'Proficiency in Perception.'),
++  F('Fey Ancestry', 'Advantage on saves vs. being charmed.'),
++];
++
++const DWARF_CORE = [
++  F('Darkvision', 'You see perfectly in dim light and darkness.'),
++  F('Dwarven Resilience', 'Advantage on saves vs. poison; resistance to poison damage.'),
++];
++
++const HALFLING_CORE = [
++  F('Lucky', 'When you roll a 1 on an attack, ability check or save, you may reroll the die once.'),
++  F('Brave', 'Advantage on saves vs. being frightened.'),
++];
++
++const GNOME_CORE = [
++  F('Darkvision', 'You see perfectly in dim light and darkness.'),
++  F('Gnome Cunning', 'Advantage on INT, WIS and CHA saves vs. magic.'),
++];
++
++const HALFELF_CORE = [
++  F('Darkvision', 'You see perfectly in dim light and darkness.'),
++  F('Fey Ancestry', 'Advantage on saves vs. being charmed.'),
++  F('Skill Versatility', 'Proficiency in two skills of your choice (simplified: +1 to two skills).'),
++];
++
++const TIEFLING_CORE = [
++  F('Darkvision', 'You see perfectly in dim light and darkness.'),
++  F('Hellish Resistance', 'Resistance to fire damage.'),
++];
++
++function dragonbornAncestry(id, name, type, colorWord) {
++  return playable({
++    id, family: 'dragonborn', name,
+     asi: { STR: 2, CHA: 1 },
+     speed: 30, size: 'Medium', darkvision: false,
+-    desc: 'Draconic warriors. +2 STR, +1 CHA.',
++    dragonType: type,
++    resist: [type],
++    desc: `${colorWord} dragonborn. +2 STR, +1 CHA. Breath and resistance: ${type}.`,
+     features: [
+-      { name: 'Breath Weapon', text: 'Once per floor, exhale a 3-tile cone of elemental damage (fire, cold, acid, or lightning).' },
+-      { name: 'Draconic Resistance', text: 'Resistance to the damage type of your draconic ancestry.' },
++      F('Breath Weapon', `Once per floor, exhale a 3-tile cone of ${type} (DEX save for half).`),
++      F('Draconic Resistance', `Resistance to ${type} damage.`),
+     ],
+-  },
+-  {
+-    id: 'wood_elf', name: 'Wood Elf', hpMult: 1.0,
++  });
++}
++
++function tieflingBloodline(id, name, asi, extraFeature, opts = {}) {
++  return playable({
++    id, family: 'tiefling', name,
++    asi,
++    speed: 30, size: 'Medium', darkvision: true,
++    resist: ['fire'],
++    desc: opts.desc,
++    bonusCantrips: opts.bonusCantrips || [],
++    racialSpells: opts.racialSpells || [],
++    features: [...TIEFLING_CORE, extraFeature],
++  });
++}
++
++export const RACES = [
++  // ---- Human ----
++  playable({
++    id: 'human', family: 'human', name: 'Human',
++    asi: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 },
++    speed: 30, size: 'Medium', darkvision: false,
++    desc: 'Versatile and ambitious. +1 to every ability score.',
++    features: [F('Human Versatility', '+1 to all ability scores.')],
++  }),
++  playable({
++    id: 'human_variant', family: 'human', name: 'Variant Human',
++    asi: {},
++    variantHuman: true,
++    speed: 30, size: 'Medium', darkvision: false,
++    desc: '+1 to two abilities, one skill proficiency, and a feat at 1st level.',
++    features: [
++      F('Ability Increase', '+1 to two different ability scores of your choice.'),
++      F('Skills', 'Proficiency in one skill of your choice.'),
++      F('Feat', 'You gain one feat of your choice.'),
++    ],
++  }),
++
++  // ---- Dwarf ----
++  playable({
++    id: 'dwarf', family: 'dwarf', name: 'Hill Dwarf',
++    asi: { CON: 2, WIS: 1 },
++    speed: 25, size: 'Medium', darkvision: true,
++    resist: ['poison'],
++    hpPerLevel: 1,
++    desc: 'Stout and wise. +2 CON, +1 WIS. +1 HP per level.',
++    features: [
++      ...DWARF_CORE,
++      F('Dwarven Toughness', '+1 hit point per level.'),
++    ],
++  }),
++  playable({
++    id: 'mountain_dwarf', family: 'dwarf', name: 'Mountain Dwarf',
++    asi: { CON: 2, STR: 2 },
++    speed: 25, size: 'Medium', darkvision: true,
++    resist: ['poison'],
++    armorProf: ['light', 'medium'],
++    desc: 'Broad and battle-ready. +2 CON, +2 STR. Light and medium armor training.',
++    features: [
++      ...DWARF_CORE,
++      F('Dwarven Armor Training', 'You have proficiency with light and medium armor.'),
++    ],
++  }),
++
++  // ---- Elf ----
++  playable({
++    id: 'elf', family: 'elf', name: 'High Elf',
++    asi: { DEX: 2, INT: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Graceful and keen-eyed. +2 DEX, +1 INT. A wizard cantrip.',
++    bonusSkills: ['Perception'],
++    bonusCantrips: ['fire_bolt'],
++    features: [
++      ...ELF_CORE,
++      F('Cantrip', 'You know one wizard cantrip (Fire Bolt). Intelligence is your spellcasting ability for it.'),
++    ],
++  }),
++  playable({
++    id: 'wood_elf', family: 'elf', name: 'Wood Elf',
+     asi: { DEX: 2, WIS: 1 },
+     speed: 35, size: 'Medium', darkvision: true,
+     maskOfTheWild: true,
+-    desc: 'Wild and fleet-footed. +2 DEX, +1 WIS.',
++    desc: 'Wild and fleet-footed. +2 DEX, +1 WIS. Speed 35. Mask of the Wild.',
++    bonusSkills: ['Perception'],
+     features: [
+-      { name: 'Mask of the Wild', text: 'You can attempt to hide even when you are only lightly obscured by foliage, mist, or other natural phenomena.' },
+-      { name: 'Fleet of Foot', text: 'Your base walking speed is 35 feet.' },
+-      { name: 'Darkvision', text: 'You see perfectly in dim light and darkness.' },
+-      { name: 'Keen Senses', text: 'Proficiency in Perception.' },
+-      { name: 'Fey Ancestry', text: 'Advantage on saves vs. being charmed.' },
++      F('Mask of the Wild', 'You can attempt to hide even when you are only lightly obscured by foliage, mist, or other natural phenomena.'),
++      F('Fleet of Foot', 'Your base walking speed is 35 feet.'),
++      ...ELF_CORE,
+     ],
++  }),
++  playable({
++    id: 'drow', family: 'elf', name: 'Dark Elf (Drow)',
++    asi: { DEX: 2, CHA: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    superiorDarkvision: true,
++    desc: 'Underdark-born. +2 DEX, +1 CHA. Superior darkvision and drow magic.',
+     bonusSkills: ['Perception'],
+-  },
++    racialSpells: ['faerie_fire', 'darkness'],
++    features: [
++      F('Superior Darkvision', 'Your darkvision has a range of 120 feet.'),
++      F('Sunlight Sensitivity', 'In bright light you have disadvantage on attack rolls and Perception checks that rely on sight (simplified in Avernus).'),
++      F('Drow Magic', 'You can cast Faerie Fire and Darkness once per floor each (no slot).'),
++      ...ELF_CORE,
++    ],
++  }),
++
++  // ---- Halfling ----
++  playable({
++    id: 'halfling', family: 'halfling', name: 'Lightfoot Halfling',
++    asi: { DEX: 2, CHA: 1 },
++    speed: 25, size: 'Small', darkvision: false,
++    naturallyStealthy: true,
++    desc: 'Lucky and nimble. +2 DEX, +1 CHA. Naturally Stealthy.',
++    features: [
++      ...HALFLING_CORE,
++      F('Naturally Stealthy', 'You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you.'),
++    ],
++  }),
++  playable({
++    id: 'stout_halfling', family: 'halfling', name: 'Stout Halfling',
++    asi: { DEX: 2, CON: 1 },
++    speed: 25, size: 'Small', darkvision: false,
++    resist: ['poison'],
++    desc: 'Hardy as a hill dwarf. +2 DEX, +1 CON. Stout Resilience.',
++    features: [
++      ...HALFLING_CORE,
++      F('Stout Resilience', 'Advantage on saves vs. poison; resistance to poison damage.'),
++    ],
++  }),
++
++  // ---- Dragonborn ancestries (PHB) ----
++  dragonbornAncestry('dragonborn', 'Red Dragonborn', 'fire', 'Red'),
++  dragonbornAncestry('dragonborn_black', 'Black Dragonborn', 'acid', 'Black'),
++  dragonbornAncestry('dragonborn_blue', 'Blue Dragonborn', 'lightning', 'Blue'),
++  dragonbornAncestry('dragonborn_brass', 'Brass Dragonborn', 'fire', 'Brass'),
++  dragonbornAncestry('dragonborn_bronze', 'Bronze Dragonborn', 'lightning', 'Bronze'),
++  dragonbornAncestry('dragonborn_copper', 'Copper Dragonborn', 'acid', 'Copper'),
++  dragonbornAncestry('dragonborn_gold', 'Gold Dragonborn', 'fire', 'Gold'),
++  dragonbornAncestry('dragonborn_green', 'Green Dragonborn', 'poison', 'Green'),
++  dragonbornAncestry('dragonborn_silver', 'Silver Dragonborn', 'cold', 'Silver'),
++  dragonbornAncestry('dragonborn_white', 'White Dragonborn', 'cold', 'White'),
++
++  // ---- Gnome ----
++  playable({
++    id: 'gnome', family: 'gnome', name: 'Rock Gnome',
++    asi: { INT: 2, CON: 1 },
++    speed: 25, size: 'Small', darkvision: true,
++    desc: 'Clever tinkerers. +2 INT, +1 CON. Artificer\'s Lore.',
++    features: [
++      ...GNOME_CORE,
++      F('Artificer\'s Lore', 'History checks about magic items, alchemical objects or technological devices add twice your proficiency (simplified: you are trained).'),
++      F('Tinker', 'You can cobble together tiny clockwork devices given time and tools (flavor).'),
++    ],
++  }),
++  playable({
++    id: 'forest_gnome', family: 'gnome', name: 'Forest Gnome',
++    asi: { INT: 2, DEX: 1 },
++    speed: 25, size: 'Small', darkvision: true,
++    desc: 'Quiet woodland folk. +2 INT, +1 DEX. Natural Illusionist.',
++    features: [
++      ...GNOME_CORE,
++      F('Natural Illusionist', 'You know the Minor Illusion cantrip (flavor — a trick of light and sound).'),
++      F('Speak with Small Beasts', 'Through sounds and gestures you can communicate simple ideas with Small or smaller beasts.'),
++    ],
++  }),
++
++  // ---- Half-Elf ----
++  playable({
++    id: 'halfelf', family: 'halfelf', name: 'Half-Elf',
++    asi: { CHA: 2, DEX: 1, CON: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Charming and adaptable. +2 CHA, +1 DEX, +1 CON.',
++    features: HALFELF_CORE,
++  }),
++  playable({
++    id: 'halfelf_high', family: 'halfelf', name: 'High Half-Elf',
++    asi: { CHA: 2, DEX: 1, INT: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'High-elven blood. +2 CHA, +1 DEX, +1 INT. A wizard cantrip.',
++    bonusCantrips: ['fire_bolt'],
++    features: [
++      ...HALFELF_CORE,
++      F('Cantrip', 'You know one wizard cantrip (Fire Bolt).'),
++    ],
++  }),
++  playable({
++    id: 'halfelf_wood', family: 'halfelf', name: 'Wood Half-Elf',
++    asi: { CHA: 2, DEX: 1, WIS: 1 },
++    speed: 35, size: 'Medium', darkvision: true,
++    maskOfTheWild: true,
++    desc: 'Wood-elven blood. +2 CHA, +1 DEX, +1 WIS. Fleet of Foot and Mask of the Wild.',
++    features: [
++      ...HALFELF_CORE,
++      F('Fleet of Foot', 'Your base walking speed is 35 feet.'),
++      F('Mask of the Wild', 'You can attempt to hide even when you are only lightly obscured by foliage, mist, or other natural phenomena.'),
++    ],
++  }),
++  playable({
++    id: 'halfelf_drow', family: 'halfelf', name: 'Drow Half-Elf',
++    asi: { CHA: 2, DEX: 1, CON: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Drow blood. +2 CHA, +1 DEX, +1 CON. Drow Magic.',
++    racialSpells: ['faerie_fire', 'darkness'],
++    features: [
++      ...HALFELF_CORE,
++      F('Drow Magic', 'You can cast Faerie Fire and Darkness once per floor each (no slot).'),
++    ],
++  }),
++
++  // ---- Half-Orc (no subrace) ----
++  playable({
++    id: 'half_orc', family: 'half_orc', name: 'Half-Orc',
++    asi: { STR: 2, CON: 1 },
++    speed: 30, size: 'Medium', darkvision: true,
++    desc: 'Fierce survivors. +2 STR, +1 CON.',
++    features: [
++      F('Darkvision', 'You see perfectly in dim light and darkness.'),
++      F('Relentless Endurance', 'Once per floor, when you would drop to 0 HP, drop to 1 HP instead.'),
++      F('Savage Attacks', 'Critical hits deal one extra weapon die.'),
++    ],
++  }),
++
++  // ---- Tiefling bloodlines (PHB Asmodeus + SCAG) ----
++  tieflingBloodline('tiefling', 'Asmodeus Tiefling', { CHA: 2, INT: 1 },
++    F('Infernal Legacy', 'You can cast Hellish Rebuke and Darkness once per floor each (no slot).'),
++    { desc: 'Blood of Asmodeus. +2 CHA, +1 INT. Infernal Legacy.', racialSpells: ['hellish_rebuke', 'darkness'] }),
++  tieflingBloodline('tiefling_baalzebul', 'Baalzebul Tiefling', { CHA: 2, INT: 1 },
++    F('Legacy of Maladomini', 'A silver tongue wrapped around a rotting core. Infernal magic of sickness and deceit.'),
++    { desc: 'Blood of Baalzebul. +2 CHA, +1 INT.', racialSpells: ['hex'] }),
++  tieflingBloodline('tiefling_dispater', 'Dispater Tiefling', { CHA: 2, DEX: 1 },
++    F('Legacy of Dis', 'Paranoid iron. You lean on disguise and second thoughts.'),
++    { desc: 'Blood of Dispater. +2 CHA, +1 DEX.', racialSpells: ['invisibility'] }),
++  tieflingBloodline('tiefling_fierna', 'Fierna Tiefling', { CHA: 2, WIS: 1 },
++    F('Legacy of Phlegethos', 'Charm drips from every word.'),
++    { desc: 'Blood of Fierna. +2 CHA, +1 WIS.', racialSpells: ['bless'] }),
++  tieflingBloodline('tiefling_glasya', 'Glasya Tiefling', { CHA: 2, DEX: 1 },
++    F('Legacy of Malbolge', 'Illusion and stealth — the daughter of Asmodeus taught you well.'),
++    { desc: 'Blood of Glasya. +2 CHA, +1 DEX.', racialSpells: ['invisibility'] }),
++  tieflingBloodline('tiefling_levistus', 'Levistus Tiefling', { CHA: 2, CON: 1 },
++    F('Legacy of Stygia', 'Ice in the veins. Armor of Agathys and a killing frost.'),
++    { desc: 'Blood of Levistus. +2 CHA, +1 CON.', bonusCantrips: ['ray_of_frost'], racialSpells: ['armor_of_agathys'] }),
++  tieflingBloodline('tiefling_mammon', 'Mammon Tiefling', { CHA: 2, INT: 1 },
++    F('Legacy of Minauros', 'Greed given form. Coin and contract are your native tongue.'),
++    { desc: 'Blood of Mammon. +2 CHA, +1 INT.', racialSpells: ['hex'] }),
++  tieflingBloodline('tiefling_mephistopheles', 'Mephistopheles Tiefling', { CHA: 2, INT: 1 },
++    F('Legacy of Cania', 'Hellfire scholarship. Burning Hands is in your blood.'),
++    { desc: 'Blood of Mephistopheles. +2 CHA, +1 INT.', racialSpells: ['burning_hands'] }),
++  tieflingBloodline('tiefling_zariel', 'Zariel Tiefling', { CHA: 2, STR: 1 },
++    F('Legacy of Avernus', 'War-born. Searing Smite and Branding Smite once per floor each.'),
++    { desc: 'Blood of Zariel. +2 CHA, +1 STR. Avernus itself is in your blood.', racialSpells: ['searing_smite', 'branding_smite'] }),
+ ];
+ 
+ export const RACE_MAP = Object.fromEntries(RACES.map(r => [r.id, r]));
+ 
++export function racesForFamily(familyId) {
++  return RACES.filter(r => r.family === familyId);
++}
++
++export function raceFamilyOf(who) {
++  if (!who) return null;
++  const char = who.char || who;
++  if (char.race && char.race.family) return char.race.family;
++  const id = char.raceId || char.id;
++  if (id && RACE_MAP[id] && RACE_MAP[id].family) return RACE_MAP[id].family;
++  if (id === 'wood_elf') return 'elf';
++  if (RACE_FAMILY_MAP[id]) return id;
++  return id || null;
++}
++
++export function isRaceFamily(who, family) {
++  return raceFamilyOf(who) === family;
++}
++
+ export function baseAbilityScores() {
+   return { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
+ }
+diff --git a/src/game/run.js b/src/game/run.js
+index 4f72ffc..3ce2b18 100644
+--- a/src/game/run.js
++++ b/src/game/run.js
+@@ -2,7 +2,7 @@
+ // permadeath, and persistence.
+ 
+ import { makeRng, uid, deepClone, clamp, ordinal, hashString } from '../rng.js';
+-import { createCharacter, randomName, levelUpCharacter, defaultAsiTargets, recomputeDerived, computeMaxHp, initResources, initSpellcasting, longRestParty, equipClassGear, multiclassInto, clearPendingChoices, skillMod, classLevel, gearInstanceOf, mod, hasFeat, asiAtLevel } from '../5e/rules.js';
++import { createCharacter, randomName, levelUpCharacter, defaultAsiTargets, recomputeDerived, computeMaxHp, initResources, initSpellcasting, longRestParty, equipClassGear, multiclassInto, clearPendingChoices, skillMod, classLevel, gearInstanceOf, mod, hasFeat, asiAtLevel, applyRacialMagic, grantFeat } from '../5e/rules.js';
+ export { multiclassInto, clearPendingChoices };
+ import { RACES, RACE_MAP } from '../data/races.js';
+ import { CLASSES, CLASS_MAP, ASI_LEVELS } from '../data/classes.js';
+@@ -75,9 +75,15 @@ export function generateCompanion(rng, level, partyClasses) {
+   // classes whose subclass arrives at level 3 wait for the player's choice
+   const level1Subclass = ['cleric', 'sorcerer', 'warlock'].includes(cls.id);
+   const sub = level1Subclass ? rng.pick(Object.keys(cls.subclasses)) : null;
++  let racialChoices = null;
++  if (race.variantHuman) {
++    const primary = cls.spellAbility || (['rogue', 'monk', 'ranger', 'bard'].includes(cls.id) ? 'DEX' : 'STR');
++    const second = primary === 'CON' ? 'DEX' : 'CON';
++    racialChoices = { asi: [primary, second], skill: 'Perception', featId: 'tough' };
++  }
+   const comp = createCharacter({
+     raceId: race.id, classId: cls.id, name,
+-    subclassId: sub, scoreAssign, level, hero: false, rng,
++    subclassId: sub, scoreAssign, level, hero: false, rng, racialChoices,
+   });
+   if (level >= 3 && !level1Subclass) comp.pendingSubclass = true;
+   comp.personality = rng.pick(['Bold', 'Cautious', 'Greedy', 'Noble', 'Sarcastic', 'Doomed', 'Cheerful', 'Grim', 'Curious', 'Vengeful']);
+@@ -582,9 +588,13 @@ export function resetHeroBaseline(hero) {
+   hero.features = [];
+   const feats1 = cls.features[1];
+   if (feats1) hero.features.push(...feats1);
++  applyRacialMagic(hero);
+   equipClassGear(hero);
+   initSpellcasting(hero);
+   initResources(hero);
++  if (hero.racialChoices && hero.racialChoices.featId) {
++    grantFeat(hero, hero.racialChoices.featId, hero.racialChoices.featChoice, null);
++  }
+   recomputeDerived(hero);
+   hero.maxHp = computeMaxHp(hero);
+   hero.hp = hero.maxHp;
+diff --git a/src/ui.js b/src/ui.js
+index 19e6b53..9fba881 100644
+--- a/src/ui.js
++++ b/src/ui.js
+@@ -2,7 +2,7 @@
+ 
+ import { makeRng, uid, clamp, ordinal, titleCase } from './rng.js';
+ import { createCharacter, mod, computeAc, computeMaxHp, recomputeDerived, initResources, initSpellcasting, skillMod, savingThrowMod, attackBonusFor, spellSlotSummary, listCantripsKnown, listLeveledSpellsKnown, canCastSpell, highestSpellLevel, levelUpCharacter, computeSpeed, ABILITIES, ABILITY_FULL, WILD_SHAPES, wildShapeFormsFor, changeGearChar, weaponStatFor, hasFeat, grantFeat, spellRangeFor } from './5e/rules.js';
+-import { RACES, RACE_MAP, SKILL_ABILITY } from './data/races.js';
++import { RACES, RACE_MAP, RACE_FAMILIES, racesForFamily, SKILL_ABILITY, SKILL_LIST, isRaceFamily } from './data/races.js';
+ import { CLASSES, CLASS_MAP, ASI_LEVELS } from './data/classes.js';
+ import { SPELLS, SPELL_MAP, cantripDmg } from './data/spells.js';
+ import { CONSUMABLES, WEAPONS, ARMORS, SHOP_ITEMS } from './data/items.js';
+@@ -309,7 +309,14 @@ export function helpScreen() {
+ export function creationScreen() {
+   const state = {
+     step: 0,
++    raceFamilyId: null,
+     raceId: null, classId: null, subclassId: null,
++    variantPhase: null, // 'asi' | 'skill' | 'feat' | 'featChoice'
++    variantAsi: [],
++    variantSkill: null,
++    variantFeat: null,
++    variantFeatChoice: null,
++    pendingFeat: null,
+     scores: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+     name: '',
+   };
+@@ -326,19 +333,7 @@ function renderCreation(state) {
+   root.appendChild(steps);
+ 
+   if (state.step === 0) {
+-    const grid = div('grid race-grid');
+-    for (const r of RACES) {
+-      const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
+-      card.appendChild(h('div', 'card-title', r.name));
+-      card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
+-      card.appendChild(h('div', 'card-desc', r.desc));
+-      const feats = div('card-feats');
+-      r.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
+-      card.appendChild(feats);
+-      card.addEventListener('click', () => { state.raceId = r.id; state.step = 1; renderCreation(state); });
+-      grid.appendChild(card);
+-    }
+-    root.appendChild(grid);
++    renderRaceStep(root, state);
+   } else if (state.step === 1) {
+     const grid = div('grid class-grid');
+     for (const c of CLASSES) {
+@@ -427,8 +422,255 @@ function remainingScores(scores) {
+   return [15, 14, 13, 12, 10, 8].filter(v => !used.includes(v));
+ }
+ 
++function selectPlayableRace(state, race) {
++  state.raceId = race.id;
++  state.variantPhase = null;
++  state.variantAsi = [];
++  state.variantSkill = null;
++  state.variantFeat = null;
++  state.variantFeatChoice = null;
++  state.pendingFeat = null;
++  if (race.variantHuman) {
++    state.variantPhase = 'asi';
++  } else {
++    state.step = 1;
++  }
++  renderCreation(state);
++}
++
++function renderRaceStep(root, state) {
++  const family = state.raceFamilyId ? RACE_FAMILIES.find(f => f.id === state.raceFamilyId) : null;
++  const lineages = family ? racesForFamily(family.id) : [];
++
++  if (state.variantPhase && state.raceId) {
++    renderVariantHumanStep(root, state);
++    return;
++  }
++
++  if (family && lineages.length > 1) {
++    const label = family.choiceLabel || 'subrace';
++    root.appendChild(h('p', 'center', `Choose your ${family.name} ${label}:`));
++    const grid = div('grid sub-grid');
++    for (const r of lineages) {
++      const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
++      card.appendChild(h('div', 'card-title', r.name));
++      card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
++      card.appendChild(h('div', 'card-desc', r.desc));
++      const feats = div('card-feats');
++      r.features.slice(0, 4).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
++      card.appendChild(feats);
++      card.addEventListener('click', () => selectPlayableRace(state, r));
++      grid.appendChild(card);
++    }
++    root.appendChild(grid);
++    root.appendChild(btn('← Back', () => {
++      state.raceFamilyId = null;
++      state.raceId = null;
++      renderCreation(state);
++    }));
++    return;
++  }
++
++  const grid = div('grid race-grid');
++  for (const fam of RACE_FAMILIES) {
++    const subs = racesForFamily(fam.id);
++    const card = div('card' + (state.raceFamilyId === fam.id ? ' selected' : ''));
++    card.appendChild(h('div', 'card-title', fam.name));
++    card.appendChild(h('div', 'card-sub', `Speed ${fam.speed} ft · ${fam.size}` + (fam.darkvision ? ' · Darkvision' : '') + (fam.lineageNote ? ` · ${fam.lineageNote}` : '')));
++    card.appendChild(h('div', 'card-desc', fam.desc));
++    const feats = div('card-feats');
++    fam.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
++    card.appendChild(feats);
++    card.addEventListener('click', () => {
++      state.raceFamilyId = fam.id;
++      if (subs.length <= 1) {
++        selectPlayableRace(state, subs[0] || RACE_MAP[fam.id]);
++      } else {
++        state.raceId = null;
++        renderCreation(state);
++      }
++    });
++    grid.appendChild(card);
++  }
++  root.appendChild(grid);
++}
++
++function renderVariantHumanStep(root, state) {
++  if (state.variantPhase === 'asi') {
++    root.appendChild(h('p', 'center', 'Variant Human: increase two different abilities by +1.'));
++    const grid = div('grid score-grid');
++    for (const ab of ABILITIES) {
++      const on = state.variantAsi.includes(ab);
++      const card = div('card score-card' + (on ? ' selected' : ''));
++      card.appendChild(h('div', 'card-title', ab));
++      card.appendChild(h('div', 'score-value', on ? '+1' : '—'));
++      card.addEventListener('click', () => {
++        if (on) state.variantAsi = state.variantAsi.filter(a => a !== ab);
++        else if (state.variantAsi.length < 2) state.variantAsi.push(ab);
++        else state.variantAsi = [state.variantAsi[1], ab];
++        renderCreation(state);
++      });
++      grid.appendChild(card);
++    }
++    root.appendChild(grid);
++    const row = div('row-center');
++    row.appendChild(btn('← Back', () => {
++      state.variantPhase = null;
++      state.raceId = null;
++      renderCreation(state);
++    }));
++    if (state.variantAsi.length === 2) {
++      row.appendChild(btn('Continue →', () => { state.variantPhase = 'skill'; renderCreation(state); }, 'primary'));
++    }
++    root.appendChild(row);
++    return;
++  }
++
++  if (state.variantPhase === 'skill') {
++    root.appendChild(h('p', 'center', 'Variant Human: choose one skill proficiency.'));
++    const grid = div('grid loot-grid');
++    for (const sk of SKILL_LIST) {
++      const on = state.variantSkill === sk;
++      const card = div('card' + (on ? ' selected' : ''));
++      card.appendChild(h('div', 'card-title', sk));
++      card.appendChild(h('div', 'card-sub', SKILL_ABILITY[sk]));
++      card.addEventListener('click', () => { state.variantSkill = sk; renderCreation(state); });
++      grid.appendChild(card);
++    }
++    root.appendChild(grid);
++    const row = div('row-center');
++    row.appendChild(btn('← Back', () => { state.variantPhase = 'asi'; renderCreation(state); }));
++    if (state.variantSkill) {
++      row.appendChild(btn('Continue →', () => { state.variantPhase = 'feat'; renderCreation(state); }, 'primary'));
++    }
++    root.appendChild(row);
++    return;
++  }
++
++  if (state.variantPhase === 'featChoice' && state.pendingFeat) {
++    const feat = state.pendingFeat;
++    const kind = feat.halfAsi ? 'ability' : feat.choice;
++    root.appendChild(h('p', 'center', `${feat.name} — make a choice`));
++    if (kind === 'ability') {
++      const options = feat.halfAsi || ABILITIES;
++      const grid = div('grid score-grid');
++      for (const ab of options) {
++        const card = div('card score-card');
++        card.appendChild(h('div', 'card-title', ab));
++        card.addEventListener('click', () => {
++          state.variantFeat = feat.id;
++          state.variantFeatChoice = ab;
++          state.pendingFeat = null;
++          state.variantPhase = null;
++          state.step = 1;
++          renderCreation(state);
++        });
++        grid.appendChild(card);
++      }
++      root.appendChild(grid);
++    } else if (kind === 'element') {
++      const grid = div('grid score-grid');
++      for (const el of ELEMENT_CHOICES) {
++        const card = div('card score-card');
++        card.appendChild(h('div', 'card-title', titleCase(el)));
++        card.addEventListener('click', () => {
++          state.variantFeat = feat.id;
++          state.variantFeatChoice = el;
++          state.pendingFeat = null;
++          state.variantPhase = null;
++          state.step = 1;
++          renderCreation(state);
++        });
++        grid.appendChild(card);
++      }
++      root.appendChild(grid);
++    } else if (kind === 'class') {
++      const grid = div('grid class-grid');
++      for (const cls of CLASSES) {
++        if (!cls.spellAbility) continue;
++        const card = div('card');
++        card.appendChild(h('div', 'card-title', cls.name));
++        card.appendChild(h('div', 'card-sub', `${cls.spellAbility} caster`));
++        card.addEventListener('click', () => {
++          state.variantFeat = feat.id;
++          state.variantFeatChoice = cls.id;
++          state.pendingFeat = null;
++          state.variantPhase = null;
++          state.step = 1;
++          renderCreation(state);
++        });
++        grid.appendChild(card);
++      }
++      root.appendChild(grid);
++    } else if (kind === 'skills') {
++      if (!state.variantFeatSkills) state.variantFeatSkills = [];
++      const picks = state.variantFeatSkills;
++      const grid = div('grid loot-grid');
++      for (const sk of SKILL_LIST) {
++        if (sk === state.variantSkill) continue;
++        const on = picks.includes(sk);
++        const card = div('card' + (on ? ' selected' : ''));
++        card.appendChild(h('div', 'card-title', sk));
++        card.addEventListener('click', () => {
++          if (on) state.variantFeatSkills = picks.filter(s => s !== sk);
++          else if (picks.length < 3) state.variantFeatSkills = [...picks, sk];
++          renderCreation(state);
++        });
++        grid.appendChild(card);
++      }
++      root.appendChild(grid);
++      if (picks.length === 3) {
++        root.appendChild(div('row-center', btn('Confirm', () => {
++          state.variantFeat = feat.id;
++          state.variantFeatChoice = picks.slice();
++          state.pendingFeat = null;
++          state.variantPhase = null;
++          state.step = 1;
++          renderCreation(state);
++        }, 'primary')));
++      }
++    }
++    root.appendChild(btn('← Back', () => { state.variantPhase = 'feat'; state.pendingFeat = null; renderCreation(state); }));
++    return;
++  }
++
++  root.appendChild(h('p', 'center', 'Variant Human: take a feat at 1st level.'));
++  const grid = div('grid class-grid feat-grid');
++  for (const f of FEATS) {
++    const card = div('card');
++    card.appendChild(h('div', 'card-title', `🎖 ${f.name}`));
++    card.appendChild(h('div', 'card-sub', f.source));
++    card.appendChild(h('div', 'card-desc', f.desc));
++    card.appendChild(btn('Take', () => {
++      const need = f.halfAsi ? 'ability' : (f.choice || null);
++      if (need) {
++        state.pendingFeat = f;
++        state.variantPhase = 'featChoice';
++        state.variantFeatSkills = [];
++        renderCreation(state);
++        return;
++      }
++      state.variantFeat = f.id;
++      state.variantFeatChoice = null;
++      state.variantPhase = null;
++      state.step = 1;
++      renderCreation(state);
++    }));
++    grid.appendChild(card);
++  }
++  root.appendChild(grid);
++  root.appendChild(btn('← Back', () => { state.variantPhase = 'skill'; renderCreation(state); }));
++}
++
+ function createHero(state) {
+   const rng = makeRng();
++  const race = RACE_MAP[state.raceId];
++  const racialChoices = race && race.variantHuman ? {
++    asi: state.variantAsi,
++    skill: state.variantSkill,
++    featId: state.variantFeat,
++    featChoice: state.variantFeatChoice,
++  } : null;
+   const hero = createCharacter({
+     raceId: state.raceId,
+     classId: state.classId,
+@@ -438,6 +680,7 @@ function createHero(state) {
+     level: 1,
+     hero: true,
+     rng,
++    racialChoices,
+   });
+   hero.personality = 'The Hero';
+   G.meta.hero = hero;
+@@ -1260,7 +1503,7 @@ function getAbilities(u) {
+   if (char.cls.id === 'monk' && Combat.hasAction(u) && res.ki && res.ki.cur > 0) add('stunning_strike');
+   if (char.cls.id === 'monk') add('martial_arts', u.martialArts && Combat.hasBonus(u));
+   if (char.cls.id === 'fighter' && char.subclassId === 'battle_master' && Combat.hasAction(u) && res.superiority && res.superiority.cur > 0) add('trip_attack');
+-  if (char.raceId === 'dragonborn') add('breath_weapon', res.breathWeapon && res.breathWeapon.cur > 0);
++  if (isRaceFamily(char, 'dragonborn')) add('breath_weapon', res.breathWeapon && res.breathWeapon.cur > 0);
+   if (char.cls.id === 'wizard') add('arcane_recovery');
+   if (char.cls.id === 'druid' && char.subclassId === 'land') add('natural_recovery');
+   // feat abilities
+diff --git a/style.css b/style.css
+index 9335b9b..8c39e30 100644
+--- a/style.css
++++ b/style.css
+@@ -232,6 +232,7 @@ h3 { font-size: 18px; margin-top: 8px; }
+ .card-sub { font-size: 12px; color: var(--blue); }
+ .card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+ .card-feats { display: flex; flex-wrap: wrap; gap: 4px; }
++.creation .card-sub { line-height: 1.4; }
+ .feat { font-size: 11px; background: #26263a; border: 1px solid #33334a; padding: 2px 6px; border-radius: 10px; color: #c0b890; }
+ .card-cost { font-size: 14px; color: var(--gold-bright); font-weight: bold; }
+ .card-effect { font-size: 12px; color: var(--green); }
+diff --git a/tools/console_test.mjs b/tools/console_test.mjs
+index f76cf24..2275cb9 100644
+--- a/tools/console_test.mjs
++++ b/tools/console_test.mjs
+@@ -97,6 +97,7 @@ step('quick press still navigates normally');
+ 
+ // ============ 2. BOOT INTO COMBAT ============
+ clickCard('Dwarf');
++clickCard('Hill Dwarf');
+ clickCard('Fighter');
+ clickCard('Champion');
+ for (let i = 0; i < 6; i++) {
+diff --git a/tools/flow_test.mjs b/tools/flow_test.mjs
+index e694154..b6b5975 100644
+--- a/tools/flow_test.mjs
++++ b/tools/flow_test.mjs
+@@ -65,8 +65,9 @@ step('title screen');
+ clickBtn('New Hero');
+ step('clicked New Hero → creation (race step)');
+ 
+-// 2. pick race
++// 2. pick race family, then a subrace when one exists
+ clickCard('Dwarf');
++clickCard('Hill Dwarf');
+ step('picked race → class step');
+ 
+ // 3. pick class
+diff --git a/tools/inspect_test.mjs b/tools/inspect_test.mjs
+index 81d2844..b3c2763 100644
+--- a/tools/inspect_test.mjs
++++ b/tools/inspect_test.mjs
+@@ -67,6 +67,7 @@ async function walkToNpc(namePart) {
+ ui.titleScreen();
+ clickBtn('New Hero');
+ clickCard('Dwarf');
++clickCard('Hill Dwarf');
+ clickCard('Fighter');
+ clickCard('Champion');
+ for (let i = 0; i < 6; i++) {
+diff --git a/tools/races_test.mjs b/tools/races_test.mjs
+new file mode 100644
+index 0000000..ceb54c5
+--- /dev/null
++++ b/tools/races_test.mjs
+@@ -0,0 +1,111 @@
++// Race families + subrace data, Variant Human kit, and creation flow.
++import { JSDOM } from 'jsdom';
++import { makeRng } from '../src/rng.js';
++import { createCharacter, computeMaxHp, computeSpeed } from '../src/5e/rules.js';
++import {
++  RACES, RACE_MAP, RACE_FAMILIES, racesForFamily, isRaceFamily, raceFamilyOf,
++} from '../src/data/races.js';
++import { CLASS_MAP } from '../src/data/classes.js';
++import { autoAssignScores } from '../src/game/run.js';
++import * as Combat from '../src/5e/combat.js';
++
++const step = (m) => console.log('✔', m);
++const fail = (m) => { console.log('✘ FAIL:', m); process.exit(1); };
++const assert = (cond, m) => { if (!cond) fail(m); };
++
++const rng = makeRng(11);
++function mk(raceId, classId = 'fighter', extra = {}) {
++  const race = RACE_MAP[raceId];
++  const cls = CLASS_MAP[classId];
++  return createCharacter({
++    raceId, classId, name: raceId, subclassId: Object.keys(cls.subclasses)[0],
++    scoreAssign: autoAssignScores(cls, race, rng),
++    level: 1, hero: false, rng, ...extra,
++  });
++}
++
++assert(RACE_FAMILIES.length === 9, 'nine PHB families on the race menu');
++assert(!RACE_FAMILIES.some(f => f.id === 'wood_elf' || f.name.includes('Lightfoot') || f.name.includes('Rock Gnome')),
++  'subraces are not top-level family options');
++assert(racesForFamily('gnome').map(r => r.id).sort().join(',') === 'forest_gnome,gnome',
++  'Gnome lists Forest + Rock');
++assert(racesForFamily('halfling').some(r => r.id === 'halfling' && r.naturallyStealthy),
++  'Lightfoot stays id=halfling and Naturally Stealthy');
++assert(racesForFamily('halfling').some(r => r.id === 'stout_halfling' && !r.naturallyStealthy),
++  'Stout is a separate lineage without Naturally Stealthy');
++assert(racesForFamily('elf').map(r => r.id).sort().join(',') === 'drow,elf,wood_elf',
++  'Elf lists High, Wood, Drow');
++assert(racesForFamily('tiefling').length === 9, 'nine Tiefling bloodlines');
++assert(racesForFamily('dragonborn').length === 10, 'ten Dragonborn ancestries');
++assert(racesForFamily('human').some(r => r.variantHuman), 'Variant Human is a human heritage');
++assert(racesForFamily('half_orc').length === 1, 'Half-Orc has no extra subrace');
++step('families nest every PHB/SCAG lineage');
++
++const rock = mk('gnome');
++assert(isRaceFamily(rock, 'gnome'), 'rock gnome is family gnome');
++assert(rock.abilities.INT === autoAssignScores(CLASS_MAP.fighter, RACE_MAP.gnome, makeRng(11)).INT + 2, 'rock gnome +2 INT');
++const forest = mk('forest_gnome');
++assert(isRaceFamily(forest, 'gnome') && forest.race.name === 'Forest Gnome', 'forest gnome playable');
++assert(forest.abilities.DEX === autoAssignScores(CLASS_MAP.fighter, RACE_MAP.forest_gnome, makeRng(11)).DEX + 1, 'forest gnome +1 DEX');
++
++const hill = mk('dwarf');
++assert(hill.race.hpPerLevel === 1, 'hill dwarf toughness stamp');
++assert(computeMaxHp(hill) === computeMaxHp({ ...hill, race: { ...hill.race, hpPerLevel: 0 } }) + 1, 'hill dwarf +1 HP at 1');
++
++const wood = mk('wood_elf', 'ranger');
++assert(computeSpeed(wood) === 7, 'wood elf 35 ft = 7 tiles');
++assert(Combat.hasMaskOfTheWild(Combat.makeUnit(wood, 'player', 0, 0)), 'wood elf Mask of the Wild');
++
++const light = mk('halfling', 'rogue');
++assert(Combat.hasNaturallyStealthy(Combat.makeUnit(light, 'player', 0, 0)), 'lightfoot Naturally Stealthy');
++const stout = mk('stout_halfling', 'rogue');
++assert(!Combat.hasNaturallyStealthy(Combat.makeUnit(stout, 'player', 0, 0)), 'stout is not Naturally Stealthy');
++assert(stout.race.resist.includes('poison'), 'stout poison resist');
++step('subrace traits apply');
++
++const blue = mk('dragonborn_blue');
++assert(isRaceFamily(blue, 'dragonborn'), 'blue dragonborn family');
++assert(blue.dragonType === 'lightning', 'blue ancestry is lightning');
++assert(blue.resources.breathWeapon && blue.resources.breathWeapon.cur === 1, 'non-red dragonborn still get a breath');
++
++const zariel = mk('tiefling_zariel', 'paladin');
++assert(zariel.spellsKnown.includes('searing_smite'), 'Zariel legacy grants Searing Smite');
++assert(zariel.featCasts.searing_smite, 'racial spell is a free once-per-floor cast');
++step('dragonborn ancestries + tiefling bloodlines');
++
++const vh = mk('human_variant', 'fighter', {
++  racialChoices: { asi: ['STR', 'CON'], skill: 'Athletics', featId: 'tough' },
++});
++assert(vh.feats.includes('tough'), 'variant human takes a feat');
++assert(vh.skills.includes('Athletics'), 'variant human skill');
++const base = autoAssignScores(CLASS_MAP.fighter, RACE_MAP.human_variant, makeRng(11));
++assert(vh.abilities.STR === base.STR + 1 && vh.abilities.CON === base.CON + 1, 'variant +1/+1');
++assert(vh.racialChoices.featId === 'tough', 'racialChoices persist for run reset');
++step('Variant Human kit');
++
++// Creation UI: families first, then lineages
++const dom = new JSDOM('<!DOCTYPE html><html><body><div id="app"><div id="ui"></div></div></body></html>', {
++  url: 'http://localhost:8080/index.html', pretendToBeVisual: true,
++});
++globalThis.window = dom.window;
++globalThis.document = dom.window.document;
++globalThis.localStorage = dom.window.localStorage;
++Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
++const ui = await import('../src/ui.js');
++const Run = await import('../src/game/run.js');
++ui.setG({ meta: Run.defaultMeta(), hero: null, run: null, combat: null });
++ui.creationScreen();
++const familyNames = [...document.querySelectorAll('.card-title')].map(n => n.textContent);
++assert(familyNames.includes('Gnome') && familyNames.includes('Elf') && familyNames.includes('Human'), 'family menu lists parent races');
++assert(!familyNames.includes('Rock Gnome') && !familyNames.includes('Lightfoot Halfling') && !familyNames.includes('Wood Elf'),
++  'subraces are hidden until a family is picked');
++const gnomeCard = [...document.querySelectorAll('.card')].find(c => c.querySelector('.card-title')?.textContent === 'Gnome');
++assert(!!gnomeCard, 'Gnome family card is clickable');
++gnomeCard.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
++const lineageNames = [...document.querySelectorAll('.card-title')].map(n => n.textContent);
++assert(lineageNames.includes('Rock Gnome') && lineageNames.includes('Forest Gnome'), 'Gnome opens its subraces');
++assert(!lineageNames.includes('Human'), 'family list is replaced by the lineage list');
++step('creation: pick family → then subrace');
++
++console.log('races_test: all good');
++process.exit(0);
+diff --git a/tools/radial_test.mjs b/tools/radial_test.mjs
+index fad04db..a4c5239 100644
+--- a/tools/radial_test.mjs
++++ b/tools/radial_test.mjs
+@@ -68,6 +68,7 @@ const radialBtn = (labelPart) => radialBtns().find(b => b.textContent.includes(l
+ ui.titleScreen();
+ clickBtn('New Hero');
+ clickCard('Dwarf');
++clickCard('Hill Dwarf');
+ clickCard('Fighter');
+ clickCard('Champion');
+ for (let i = 0; i < 6; i++) {
+diff --git a/tools/spellbook_test.mjs b/tools/spellbook_test.mjs
+index c380e91..c40107b 100644
+--- a/tools/spellbook_test.mjs
++++ b/tools/spellbook_test.mjs
+@@ -70,6 +70,7 @@ const toastText = () => document.querySelector('#toast')?.textContent || '';
+ ui.titleScreen();
+ clickBtn('New Hero');
+ clickCard('Dwarf');
++clickCard('Hill Dwarf');
+ clickCard('Wizard');
+ clickCard('School of Evocation');
+ for (let i = 0; i < 6; i++) {

@@ -2,7 +2,7 @@
 // permadeath, and persistence.
 
 import { makeRng, uid, deepClone, clamp, ordinal, hashString } from '../rng.js';
-import { createCharacter, randomName, levelUpCharacter, defaultAsiTargets, recomputeDerived, computeMaxHp, initResources, initSpellcasting, longRestParty, equipClassGear, multiclassInto, clearPendingChoices, skillMod, classLevel, gearInstanceOf, mod, hasFeat, asiAtLevel } from '../5e/rules.js';
+import { createCharacter, randomName, levelUpCharacter, defaultAsiTargets, recomputeDerived, computeMaxHp, initResources, initSpellcasting, longRestParty, equipClassGear, multiclassInto, clearPendingChoices, skillMod, classLevel, gearInstanceOf, mod, hasFeat, asiAtLevel, applyRacialMagic, grantFeat } from '../5e/rules.js';
 export { multiclassInto, clearPendingChoices };
 import { RACES, RACE_MAP } from '../data/races.js';
 import { CLASSES, CLASS_MAP, ASI_LEVELS } from '../data/classes.js';
@@ -75,9 +75,15 @@ export function generateCompanion(rng, level, partyClasses) {
   // classes whose subclass arrives at level 3 wait for the player's choice
   const level1Subclass = ['cleric', 'sorcerer', 'warlock'].includes(cls.id);
   const sub = level1Subclass ? rng.pick(Object.keys(cls.subclasses)) : null;
+  let racialChoices = null;
+  if (race.variantHuman) {
+    const primary = cls.spellAbility || (['rogue', 'monk', 'ranger', 'bard'].includes(cls.id) ? 'DEX' : 'STR');
+    const second = primary === 'CON' ? 'DEX' : 'CON';
+    racialChoices = { asi: [primary, second], skill: 'Perception', featId: 'tough' };
+  }
   const comp = createCharacter({
     raceId: race.id, classId: cls.id, name,
-    subclassId: sub, scoreAssign, level, hero: false, rng,
+    subclassId: sub, scoreAssign, level, hero: false, rng, racialChoices,
   });
   if (level >= 3 && !level1Subclass) comp.pendingSubclass = true;
   comp.personality = rng.pick(['Bold', 'Cautious', 'Greedy', 'Noble', 'Sarcastic', 'Doomed', 'Cheerful', 'Grim', 'Curious', 'Vengeful']);
@@ -582,9 +588,13 @@ export function resetHeroBaseline(hero) {
   hero.features = [];
   const feats1 = cls.features[1];
   if (feats1) hero.features.push(...feats1);
+  applyRacialMagic(hero);
   equipClassGear(hero);
   initSpellcasting(hero);
   initResources(hero);
+  if (hero.racialChoices && hero.racialChoices.featId) {
+    grantFeat(hero, hero.racialChoices.featId, hero.racialChoices.featChoice, null);
+  }
   recomputeDerived(hero);
   hero.maxHp = computeMaxHp(hero);
   hero.hp = hero.maxHp;
