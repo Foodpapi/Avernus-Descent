@@ -204,6 +204,7 @@ function executeConsole(cmd, print) {
       const combat = G.combat;
       if (combat && !combat.over) {
         if (enemyTimer) { clearTimeout(enemyTimer); enemyTimer = null; }
+        if (playerMoveTimer) { clearTimeout(playerMoveTimer); playerMoveTimer = null; }
         for (const e of Combat.aliveEnemies(combat)) { e.hp = 0; e.dead = true; }
         Actions.log(combat, '🛠 DEBUG: floor skipped.');
         combat.over = true;
@@ -290,7 +291,7 @@ export function helpScreen() {
     ['🏘 The Town (every 3rd floor)', 'A long rest restores everything and resets blessings. Hire mercenaries (fight any 4 of your roster), browse a themed shop (blacksmiths skew to steel, archers to bows, rare Mind Flayer & Bhaal shops sell strange things), and try townspeople skill checks — pass for a party-wide +1 blessing until the next long rest, fail for a −1. Clerics, druids and wizards prepare their daily spells at camp.'],
 
     ['⛰ Terrain', 'High ground gives +1 to ranged attacks per elevation. Low cover (tables, crates, logs) gives +2 AC vs ranged. Tall obstacles block sight. Destroyable objects have HP bars, materials, and resistances (wood hates fire, stone hates thunder…). Hazards hurt: fire, lava, brambles, grease, deep water (don\'t fall in!).'],
-    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Halflings can hide behind a larger creature (Naturally Stealthy); Wood Elves can hide in foliage or mist (Mask of the Wild). While hidden, enemy line of sight is painted red on the map — step into it or get too close and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
+    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Characters walk tile-by-tile (just like enemies), so opportunity attacks and hazards like grease play out on the tiles they actually step on. Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Halflings can hide behind a larger creature (Naturally Stealthy); Wood Elves can hide in foliage or mist (Mask of the Wild). While hidden, enemy line of sight is painted red on the map — step into it or get too close and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
     ['🎖 Feats', 'ASIs and feats follow CLASS level (5e rules): at class levels 4, 8, 12, 16 and 19 — plus 6 & 14 for fighters and 10 for rogues — you may take a FEAT instead of the ability score increase. Multiclassing does not change your class-level milestones: a Wizard 3 / Barbarian 1 gets no ASI until one of those classes reaches its milestone. 29 feats with real mechanics: Great Weapon Master & Sharpshooter (toggleable -5/+10), Polearm Master, Sentinel, War Caster, Elemental Adept, Lucky, Mobile, Charger, Tough, Resilient, Magic Initiate and more.'],
 
     ['🎁 Loot', 'After each victory choose loot: weapons (possibly enchanted), armor, potions, scrolls. Boss floors (every 3rd) drop better loot.'],
@@ -1402,9 +1403,12 @@ function buildUnitPanel(panel) {
 function buildActionBar(bar) {
   bar.innerHTML = '';
   const u = currentPlayerUnit();
-  if (!u || G.combat.over) {
-    // enemy turn: no actions, but retreat is always an option
-    if (!G.combat.over) bar.appendChild(btn('⚑ Retreat', () => confirmRetreat(), 'subtle'));
+  if (!u || G.combat.over || (CS && CS.mode === 'moving')) {
+    // enemy turn or mid-walk: no actions, but retreat is always an option
+    if (!G.combat.over) {
+      if (CS && CS.mode === 'moving') bar.appendChild(h('span', 'hint', 'Walking…'));
+      bar.appendChild(btn('⚑ Retreat', () => confirmRetreat(), 'subtle'));
+    }
     return;
   }
   const bA = btn(`⚔ Actions${u.actionPoints > 1 ? ` (${u.actionPoints})` : ''}`, () => openRadial('actions'), 'green');
@@ -1554,6 +1558,7 @@ function closeRadial(silent = false) {
 function openRadial(level) {
   const u = currentPlayerUnit();
   if (!u || !G.combat || G.combat.over) return;
+  if (CS && CS.mode === 'moving') return;
   closeRadial(true);
   Audio.play('ui/open', { vol: 0.7, throttle: 60 });
   CS.radial = { level };
@@ -2244,6 +2249,7 @@ function afterPlayerAction() {
 }
 
 function endPlayerTurn() {
+  if (CS && CS.mode === 'moving') return;
   const combat = G.combat;
   const u = currentPlayerUnit();
   if (!u) return;
@@ -2262,6 +2268,39 @@ function updateHud() {
 }
 
 let enemyTimer = null;
+let playerMoveTimer = null;
+const PLAYER_STEP_MS = 200; // matches enemy step gap
+
+function playerStepDelay() {
+  return (G && G.combatInstant) ? 0 : PLAYER_STEP_MS;
+}
+
+function refreshCombatView() {
+  try { if (document.querySelector('.combat-hud')) updateHud(); } catch (e) {}
+  try { if (document.querySelector('#combat-canvas')) render(); } catch (e) {}
+}
+
+// Drive a player's move path tile-by-tile (same cadence as enemy walks) so
+// grease slips, brambles, and enemy opportunity attacks play out on screen.
+export function drivePlayerSteps(combat, u, path, i = 0) {
+  return new Promise((resolve) => {
+    if (!path || !path.length || !u) { resolve(); return; }
+    if (combat.over || u.dead || u.hp <= 0) { resolve(); return; }
+    if (i >= path.length) { resolve(); return; }
+    const tile = path[i];
+    performAction(combat, u.id, { type: 'move', path: [{ x: tile.x, y: tile.y }] });
+    if (CS) CS.hoverPath = path.slice(i + 1);
+    refreshCombatView();
+    if (combat.over || u.dead || u.hp <= 0 || i + 1 >= path.length) {
+      resolve();
+      return;
+    }
+    playerMoveTimer = setTimeout(() => {
+      if (G.combat !== combat) { resolve(); return; }
+      drivePlayerSteps(combat, u, path, i + 1).then(resolve);
+    }, playerStepDelay());
+  });
+}
 
 // Reaction modal: pauses the enemy turn until the player chooses.
 function showReactionModal(prompts) {
@@ -2406,6 +2445,7 @@ function runEnemyTurns() {
 
 function combatEnded() {
   if (enemyTimer) { clearTimeout(enemyTimer); enemyTimer = null; }
+  if (playerMoveTimer) { clearTimeout(playerMoveTimer); playerMoveTimer = null; }
   closeRadial();
   const combat = G.combat;
   if (!combat || combat._ended) return; // guard: console skip + timers can race
@@ -2507,8 +2547,8 @@ function render() {
   // While hidden: paint every revealed enemy's line of sight (5e "clearly seen").
   drawEnemySight(ctx, combat, scale);
 
-  // path preview
-  if (CS.hover && CS.hoverPath) {
+  // path preview (hover in idle, or remaining tiles while walking)
+  if (CS.hoverPath && CS.hoverPath.length) {
     for (const p of CS.hoverPath) {
       ctx.fillStyle = 'rgba(255,220,80,0.35)';
       ctx.fillRect(p.x * TILE_SIZE * scale, p.y * TILE_SIZE * scale, TILE_SIZE * scale, TILE_SIZE * scale);
@@ -3751,7 +3791,7 @@ export function handleCombatClick(canvas, evt) {
   const cs = CS;
   const combat = G.combat;
   if (!cs || !combat || combat.over) return;
-  if (cs.mode === 'enemy') return;
+  if (cs.mode === 'enemy' || cs.mode === 'moving') return;
   const rect = canvas.getBoundingClientRect();
   const sx = (evt.clientX - rect.left) / cs.scale;
   const sy = (evt.clientY - rect.top) / cs.scale;
@@ -3771,7 +3811,7 @@ export function handleCombatClick(canvas, evt) {
 export function handleCombatTileClick(tx, ty, button) {
   const cs = CS;
   const combat = G.combat;
-  if (!cs || !combat || combat.over || cs.mode === 'enemy') return;
+  if (!cs || !combat || combat.over || cs.mode === 'enemy' || cs.mode === 'moving') return;
   const u = currentPlayerUnit();
   if (!u) return;
 
@@ -3934,15 +3974,26 @@ export function handleCombatTileClick(tx, ty, button) {
       break;
     }
     case 'idle': {
-      // movement
+      // movement — walk each tile so hazards / OAs are visible (like enemies)
       if (cs.reachable) {
         const key = ty * combat.w + tx;
         if (cs.reachable.has(key)) {
           const res = Combat.findPath(combat, u, tx, ty, u.moveRemaining);
-          if (res) {
-            performAction(combat, u.id, { type: 'move', path: res.path });
-            cs.hoverPath = null;
-            afterPlayerAction();
+          if (res && res.path && res.path.length) {
+            closeRadial();
+            cs.mode = 'moving';
+            cs.pending = null;
+            cs.hoverPath = res.path.slice();
+            cs.reachable = null;
+            refreshCombatView();
+            drivePlayerSteps(combat, u, res.path, 0).then(() => {
+              if (G.combat !== combat) return;
+              if (CS) { CS.hoverPath = null; CS.mode = 'idle'; }
+              if (combat.over) { combatEnded(); return; }
+              afterPlayerAction();
+              const cur = currentPlayerUnit();
+              if (cur && cur.hp > 0) openRadial('root');
+            });
           }
         }
       }
@@ -3963,13 +4014,17 @@ export function combatScreenInputs() {
 
   canvas.addEventListener('pointermove', (e) => handleCombatClick(canvas, e));
   canvas.addEventListener('pointerleave', () => {
-    if (CS) { CS.hover = null; CS.hoverPath = null; render(); }
+    if (!CS) return;
+    CS.hover = null;
+    if (CS.mode !== 'moving') CS.hoverPath = null;
+    render();
   });
   canvas.addEventListener('pointercancel', () => clearPress());
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   canvas.addEventListener('pointerdown', (e) => {
     if (!CS || !G.combat || G.combat.over) return;
+    if (CS.mode === 'moving') return;
     if (e.button === 2) {
       // right-click cancels the current targeting mode
       e.preventDefault();
@@ -4080,6 +4135,7 @@ if (typeof window !== 'undefined') {
     }
 
     if (!CS || !G || !G.combat || G.combat.over) return;
+    if (CS.mode === 'moving') return;
     if (e.key === 'Escape') {
       if (CS.radial) {
         closeRadial();

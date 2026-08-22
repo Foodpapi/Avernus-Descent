@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-22 (v=51 dragonborn breath + skill math)
+**Last updated:** 2026-08-22 (v=52 dragonborn breath + skill math)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -196,7 +196,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
   `victoryScreen` (**music/victory sting + items/chest_open + items/gold**), `defeatScreen`
   (**music/defeat sting**), `showOverlay(overlay)` helper (**ui/open sound** — used by ALL 20
   modal append sites), `sortedUnitsForRender`, `popupAge`, `openLineupOverlay`,
-  `showReactionModal` + `driveEnemySteps`, `startCombat` (**combat/start sound**), `toast`.
+  `showReactionModal` + `driveEnemySteps` + **`drivePlayerSteps`** (player click-to-move walks one tile at a time, 200 ms gap, `G.combatInstant` = 0 delay for tests), `startCombat` (**combat/start sound**), `toast`.
   ⚠ **LESSON LEARNED:** never blanket-`sed` `document.body.appendChild(overlay)` → it rewrote the
   new `showOverlay` helper itself (infinite recursion). When sed-editing ui.js, always verify the
   helper body afterwards. The fix: `showOverlay(overlay) { document.body.appendChild(overlay); Audio.play('ui/open', ...); }`.
@@ -268,7 +268,8 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 ## 6. Key Timings / Constants (don't break these)
 
 - Long-press threshold 550 ms; popup dur 1100; hex `popupDelay: 1150` (sound synced to it);
-  enemy turn 480 ms delay + 200 ms step gap; debug console key `avernus_debug`.
+  enemy turn 480 ms delay + 200 ms step gap; player walk 200 ms step gap (`G.combatInstant` = 0);
+  debug console key `avernus_debug`.
 - Damage popup colors (`POPUP_STYLES` in ui.js): fire `#ff6a2a`🔥, cold `#6ac2ff`❄,
   acid `#7ae05a`🧪, lightning `#ffe83c`⚡, thunder `#f0a848`💥, poison `#c87ae8`☠,
   radiant `#fff2a0`✨, necrotic `#a06ae8`💀, psychic `#f07ad8`🧠, force `#5ae0e8`💫,
@@ -302,10 +303,10 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 6. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/index.html` → 200.
 7. Reply with root-cause + "what changed" bullets + **hard-refresh (Ctrl+Shift+R)** reminder.
 
-### Full test battery (27 suites)
+### Full test battery (28 suites)
 ```bash
 cd /home/user/avernus-descent
-fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "27 suites: $fails failures · headless exit $hc"
+fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test playermove_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "28 suites: $fails failures · headless exit $hc"
 ```
 (jsdom suites print harmless `window.scrollTo` not-implemented warnings — ignore those; only exit
 codes matter. Do NOT run suites through `headless.js` — that file is its own suite.)
@@ -355,7 +356,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** **v=51** — dragonborn Breath Weapon actually deals damage, typed by ancestry.
+- **Where we are:** **v=52** — dragonborn Breath Weapon actually deals damage, typed by ancestry.
   Root cause: `useAbility('breath_weapon')` only walked a 3-tile *line* while the UI previewed a *cone*, so anyone off the center axis (how players actually aim) took 0 damage. Casters also used `spellSaveDC` instead of the PHB CON DC. Ancestry `dragonType` existed on the race but the engine did not expand acid/lightning into a 5×30 ft line.
   Fix: `dragonBreathFor()` (type + cone/line from ancestry). Cone uses `coneTilesFor` (matches preview). Acid/lightning use `lineTilesFor` (6 tiles). DC = 8 + CON + prof. DEX saves use `savingThrowMod` for PCs. FX cone/line flash. UI aims `ability_line` for line ancestries.
   Skills scan: `skillMod` now null-safe; proficiency / expertise (double prof) / Jack of All Trades (bard 2+) match 5e. Breath test: `tools/breath_test.mjs`.
@@ -449,14 +450,13 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=51** (dragonborn breath + skill math). Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=52** (dragonborn breath + skill math). Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
 This handoff log update (now v=51 dragonborn breath) is newer than that commit.
 
-Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
+Battery (28): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
 gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test
-sounds_test moonbeam_test projectile_test hide_test` + `headless.js`.
- `headless.js`.
+sounds_test moonbeam_test projectile_test hide_test playermove_test` + `headless.js`.
