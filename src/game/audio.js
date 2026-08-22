@@ -41,6 +41,19 @@ const lastPlayed = new Map(); // slot path -> performance.now() for throttling
 // Current looping tracks (one per channel) for crossfades.
 const loops = { music: null, ambience: null };
 
+// Loads that fetched before the AudioContext existed (the first user gesture)
+// wait here instead of failing silently and being cached as "missing".
+const ctxWaiters = [];
+function waitForCtx() {
+  if (ctx) return Promise.resolve();
+  return new Promise((resolve) => { ctxWaiters.push(resolve); });
+}
+function notifyCtxReady() {
+  if (!ctx) return;
+  const ws = ctxWaiters.splice(0);
+  for (const resolve of ws) resolve();
+}
+
 // ---------------------------------------------------------------------------
 // Environment detection & preferences
 // ---------------------------------------------------------------------------
@@ -97,7 +110,12 @@ function resolveFile(slotPath) {
         if (!res.ok) throw new Error(`missing ${file}`);
         return res.arrayBuffer();
       })
-      .then(ab => ctx.decodeAudioData(ab))
+      // At boot (before the first user gesture) `ctx` does not exist yet —
+      // wait for unlock() instead of failing + caching the file as missing.
+      // Without this, music fetched for the title screen at load time could
+      // never play, even after the user clicked (SFX worked because they are
+      // all triggered post-gesture).
+      .then(ab => waitForCtx().then(() => ctx.decodeAudioData(ab)))
       .then(buf => {
         bufferCache.set(file, buf);
         inflight.delete(file);
@@ -304,6 +322,9 @@ export function unlock() {
     }
   }
   if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) { /* noop */ } }
+  // Let any loads that were waiting for the context (music requested at boot,
+  // before the first gesture) finish decoding and start playing.
+  notifyCtxReady();
   return true;
 }
 
