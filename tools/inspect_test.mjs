@@ -1,6 +1,6 @@
 // Long-press inspection modal test (jsdom): boot → combat → hold-click a unit
 // tile (sheet + terrain) → hold-click an empty tile (terrain only) → verify a
-// quick click queues paced one-tile movement and a held click never triggers actions.
+// quick click still moves normally and a held click never triggers actions.
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!DOCTYPE html><html><body><div id="app"><div id="ui"></div></div></body></html>', {
@@ -168,13 +168,9 @@ if (G.combat.over) {
     press(dest.tx, dest.ty);
     await sleep(80); // quick release, under the long-press threshold
     release(dest.tx, dest.ty);
-    // Combat walking is intentionally paced: it must not snap immediately,
-    // but the adjacent step must resolve shortly afterward.
-    await sleep(70);
-    if (u.x === dest.tx && u.y === dest.ty) fail('quick click snapped to the tile instead of pacing movement');
-    await sleep(140);
-    if (u.x !== dest.tx || u.y !== dest.ty) fail(`quick click did not complete its paced move (${u.x},${u.y} -> ${dest.tx},${dest.ty})`);
-    step('quick click queues a visibly paced one-tile move');
+    await sleep(50);
+    if (u.x !== dest.tx || u.y !== dest.ty) fail(`quick click did not move unit (${u.x},${u.y} -> ${dest.tx},${dest.ty})`);
+    step('quick click still moves the unit normally');
   }
 }
 

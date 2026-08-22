@@ -302,10 +302,10 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 6. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/index.html` → 200.
 7. Reply with root-cause + "what changed" bullets + **hard-refresh (Ctrl+Shift+R)** reminder.
 
-### Full test battery (28 suites)
+### Full test battery (29 suites)
 ```bash
 cd /home/user/avernus-descent
-fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test breath_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "28 suites: $fails failures · headless exit $hc"
+fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test breath_test playermove_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "29 suites: $fails failures · headless exit $hc"
 ```
 (jsdom suites print harmless `window.scrollTo` not-implemented warnings — ignore those; only exit
 codes matter. Do NOT run suites through `headless.js` — that file is its own suite.)
@@ -465,8 +465,8 @@ The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
 This handoff log update (now v=53 paced combat movement) is newer than that commit.
 
-Battery (28): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
+Battery (29): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
 gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test
-sounds_test moonbeam_test projectile_test hide_test breath_test` + `headless.js`.
+sounds_test moonbeam_test projectile_test hide_test breath_test playermove_test` + `headless.js`.
  `headless.js`.
