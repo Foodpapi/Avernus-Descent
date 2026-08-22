@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-19 (v=46 hidden enemy-sight overlay)
+**Last updated:** 2026-08-21 (v=47 race → subrace character creation)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=46"></script>` (**currently v=46** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=47"></script>` (**currently v=47** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -54,7 +54,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
   sounds, mute button + M key.
 - `src/rng.js` — `makeRng` (mulberry32), `uid`, `clamp`, `ordinal`, `weighted`, `sample`, `deepClone`.
 - `src/data/`:
-  - `races.js` — **10 races** (High Elf + Wood Elf; Halfling has `naturallyStealthy`), `SKILL_LIST`, `SKILL_ABILITY`.
+  - `races.js` — **9 PHB families** (`RACE_FAMILIES`) and flattened playable lineages (`RACES` / `RACE_MAP`). Subraces: Hill/Mountain Dwarf, High/Wood/Drow Elf, Lightfoot/Stout Halfling, Forest/Rock Gnome, Standard/Variant Human, 10 Dragonborn ancestries, 4 Half-Elf heritages, Half-Orc, 9 Tiefling bloodlines (PHB Asmodeus + SCAG). Helpers: `racesForFamily`, `raceFamilyOf`, `isRaceFamily`. Lightfoot keeps id `halfling` + `naturallyStealthy`; Wood Elf keeps `wood_elf` + `maskOfTheWild`. `SKILL_LIST`, `SKILL_ABILITY`.
   - `classes.js` — 12 classes; `AST_LEVELS=[4,8,12,16,19]`; **`extraAsi: [6,14]` on fighter, `[10]`
     on rogue**; slot tables `FULL_CASTER_SLOTS`/`HALF_CASTER_SLOTS`/`WARLOCK_SLOTS`; `CANTRIP_COUNTS`.
   - `spells.js` — **101 spells**, `SPELL_MAP`, `SPELL_LISTS`, `cantripDmg`, ~35 `concentration: true`
@@ -290,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=46 → next is v=47.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=47 → next is v=48.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:

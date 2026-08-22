@@ -65,8 +65,9 @@ step('title screen');
 clickBtn('New Hero');
 step('clicked New Hero → creation (race step)');
 
-// 2. pick race
+// 2. pick race family, then a subrace when one exists
 clickCard('Dwarf');
+clickCard('Hill Dwarf');
 step('picked race → class step');
 
 // 3. pick class

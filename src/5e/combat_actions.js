@@ -4,7 +4,7 @@
 import { mod, attackBonusFor, weaponDiceFor, weaponStatFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, spellSlotSummary, canCastSpell, computeSpeed, WILD_SHAPES, townMod, hasFeat, skillMod, passivePerception } from './rules.js';
 import { WEAPONS, FISTS, CONSUMABLES, ENCHANTMENTS, ARMORS } from '../data/items.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
-import { RACE_MAP } from '../data/races.js';
+import { RACE_MAP, isRaceFamily } from '../data/races.js';
 import { OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
 import { clamp } from '../rng.js';
 import * as Audio from '../game/audio.js';
@@ -47,7 +47,7 @@ function rollStealth(combat, u) {
   const bonus = stealthBonusFor(u);
   const rollOnce = () => {
     let n = d20(combat.rng);
-    if (u.char && u.char.raceId === 'halfling' && n === 1) n = d20(combat.rng);
+    if (u.char && isRaceFamily(u.char, 'halfling') && n === 1) n = d20(combat.rng);
     return n;
   };
   let a = rollOnce();

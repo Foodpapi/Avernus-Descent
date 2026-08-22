@@ -1,7 +1,7 @@
 // Core 5e rules: ability modifiers, proficiency, character creation,
 // AC, HP, leveling, gear. Combat resolution lives in combat.js.
 
-import { RACE_MAP, baseAbilityScores, SKILL_ABILITY } from '../data/races.js';
+import { RACE_MAP, baseAbilityScores, SKILL_ABILITY, isRaceFamily } from '../data/races.js';
 import { CLASS_MAP, PROF_BY_LEVEL, ASI_LEVELS, attacksPerAction, spellSlotsAt, pactSlotsAt, CANTRIP_COUNTS } from '../data/classes.js';
 import { SPELL_MAP, SPELL_LISTS, cantripDmg } from '../data/spells.js';
 import { WEAPONS, ARMORS, SHIELDS, FISTS } from '../data/items.js';
@@ -96,7 +96,30 @@ export const PERSONALITIES = ['Bold', 'Cautious', 'Greedy', 'Noble', 'Sarcastic'
 
 // ---- Character creation ----
 // scorePool: array of 6 values (standard array) to be placed on abilities.
-export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng }) {
+export function applyRacialMagic(char) {
+  const race = char.race || RACE_MAP[char.raceId];
+  if (!race) return;
+  char.featCantrips = char.featCantrips || [];
+  char.featSpells = char.featSpells || [];
+  char.featCasts = char.featCasts || {};
+  char.spellsKnown = char.spellsKnown || [];
+  for (const sid of (race.bonusCantrips || [])) {
+    if (!SPELL_MAP[sid]) continue;
+    if (!char.spellsKnown.includes(sid)) char.spellsKnown.push(sid);
+    if (!char.featCantrips.includes(sid)) char.featCantrips.push(sid);
+  }
+  for (const sid of (race.racialSpells || [])) {
+    if (!SPELL_MAP[sid]) continue;
+    if (!char.spellsKnown.includes(sid)) char.spellsKnown.push(sid);
+    if (!char.featSpells.includes(sid)) char.featSpells.push(sid);
+    if (char.featCasts[sid] !== false) char.featCasts[sid] = true;
+  }
+  if (race.dragonType) char.dragonType = race.dragonType;
+  if (race.naturallyStealthy) char.naturallyStealthy = true;
+  if (race.maskOfTheWild) char.maskOfTheWild = true;
+}
+
+export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng, racialChoices = null }) {
   const race = RACE_MAP[raceId];
   const cls = CLASS_MAP[classId];
   const abilities = baseAbilityScores();
@@ -139,11 +162,27 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
     personality: hero ? 'The Hero' : rng.pick(PERSONALITIES),
     wildShaped: false,
     size: race.size || 'Medium',
-    vision: race.darkvision ? 12 : 8,
+    vision: race.superiorDarkvision ? 24 : (race.darkvision ? 12 : 8),
   };
 
   // Racial ASIs
-  for (const [ab, val] of Object.entries(race.asi)) abilities[ab] += val;
+  for (const [ab, val] of Object.entries(race.asi || {})) abilities[ab] += val;
+  const choices = racialChoices || {};
+  if (race.variantHuman) {
+    let asiPicks = Array.isArray(choices.asi) ? choices.asi.filter(a => ABILITIES.includes(a)) : [];
+    asiPicks = [...new Set(asiPicks)].slice(0, 2);
+    if (asiPicks.length < 2) {
+      const leftover = ABILITIES.filter(a => !asiPicks.includes(a));
+      while (asiPicks.length < 2 && leftover.length) asiPicks.push(leftover.shift());
+    }
+    for (const ab of asiPicks) abilities[ab] += 1;
+    char.racialChoices = {
+      asi: asiPicks,
+      skill: choices.skill || null,
+      featId: choices.featId || null,
+      featChoice: choices.featChoice || null,
+    };
+  }
   char.baseAbilities = { ...abilities };
 
   // Skills
@@ -152,6 +191,11 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
   const picks = rng.shuffle(skillChoices).slice(0, nSkills);
   char.skills = picks;
   if (race.bonusSkills) for (const s of race.bonusSkills) if (!char.skills.includes(s)) char.skills.push(s);
+  if (race.variantHuman) {
+    const sk = (char.racialChoices && char.racialChoices.skill) || rng.pick(Object.keys(SKILL_ABILITY));
+    if (char.racialChoices) char.racialChoices.skill = sk;
+    if (!char.skills.includes(sk)) char.skills.push(sk);
+  }
   if (classId === 'rogue') {
     const exp = rng.shuffle(Object.keys(SKILL_ABILITY)).slice(0, 2);
     char.skillExpertise = exp;
@@ -162,6 +206,9 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
     const feats = cls.features[l];
     if (feats) for (const f of feats) char.features.push(f);
   }
+
+  // Racial cantrips / once-per-floor spells (High Elf, Drow, Tiefling bloodlines…)
+  applyRacialMagic(char);
 
   // HP
   recomputeDerived(char);
@@ -174,6 +221,14 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
 
   // Resources per floor
   initResources(char);
+
+  // Variant Human feat — after the sheet exists so grantFeat can mutate it
+  if (race.variantHuman) {
+    const featId = (char.racialChoices && char.racialChoices.featId) || 'tough';
+    const featChoice = char.racialChoices ? char.racialChoices.featChoice : null;
+    if (char.racialChoices) char.racialChoices.featId = featId;
+    grantFeat(char, featId, featChoice, rng);
+  }
 
   char.maxHp = computeMaxHp(char);
   char.hp = char.maxHp;
@@ -204,6 +259,7 @@ export function computeMaxHp(char) {
   let hp = die + conModHere + (classLevel(char) - 1) * (avg + conModHere);
   if (cls.id === 'sorcerer' && char.subclassId === 'draconic') hp += classLevel(char);
   if (hasFeat(char, 'tough')) hp += char.level * 2;
+  if (char.race && char.race.hpPerLevel) hp += char.level * char.race.hpPerLevel;
   hp += townMod(char, 'hp') * 5;
   const aid = char.buffs.find(b => b.id === 'aid');
   if (aid) hp += aid.value || 5;
@@ -438,8 +494,8 @@ export function initResources(char) {
       break;
   }
   // racial once-per-floor
-  if (char.raceId === 'dragonborn') char.resources.breathWeapon = { max: 1, cur: 1 };
-  if (char.raceId === 'half_orc') char.resources.relentlessEndurance = { max: 1, cur: 1 };
+  if (isRaceFamily(char, 'dragonborn')) char.resources.breathWeapon = { max: 1, cur: 1 };
+  if (isRaceFamily(char, 'half_orc')) char.resources.relentlessEndurance = { max: 1, cur: 1 };
   // multiclass resources
   initMulticlassResources(char);
   // feat resources

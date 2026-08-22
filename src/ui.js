@@ -2,7 +2,7 @@
 
 import { makeRng, uid, clamp, ordinal, titleCase } from './rng.js';
 import { createCharacter, mod, computeAc, computeMaxHp, recomputeDerived, initResources, initSpellcasting, skillMod, savingThrowMod, attackBonusFor, spellSlotSummary, listCantripsKnown, listLeveledSpellsKnown, canCastSpell, highestSpellLevel, levelUpCharacter, computeSpeed, ABILITIES, ABILITY_FULL, WILD_SHAPES, wildShapeFormsFor, changeGearChar, weaponStatFor, hasFeat, grantFeat, spellRangeFor } from './5e/rules.js';
-import { RACES, RACE_MAP, SKILL_ABILITY } from './data/races.js';
+import { RACES, RACE_MAP, RACE_FAMILIES, racesForFamily, SKILL_ABILITY, SKILL_LIST, isRaceFamily } from './data/races.js';
 import { CLASSES, CLASS_MAP, ASI_LEVELS } from './data/classes.js';
 import { SPELLS, SPELL_MAP, cantripDmg } from './data/spells.js';
 import { CONSUMABLES, WEAPONS, ARMORS, SHOP_ITEMS } from './data/items.js';
@@ -309,7 +309,14 @@ export function helpScreen() {
 export function creationScreen() {
   const state = {
     step: 0,
+    raceFamilyId: null,
     raceId: null, classId: null, subclassId: null,
+    variantPhase: null, // 'asi' | 'skill' | 'feat' | 'featChoice'
+    variantAsi: [],
+    variantSkill: null,
+    variantFeat: null,
+    variantFeatChoice: null,
+    pendingFeat: null,
     scores: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
     name: '',
   };
@@ -326,19 +333,7 @@ function renderCreation(state) {
   root.appendChild(steps);
 
   if (state.step === 0) {
-    const grid = div('grid race-grid');
-    for (const r of RACES) {
-      const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
-      card.appendChild(h('div', 'card-title', r.name));
-      card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
-      card.appendChild(h('div', 'card-desc', r.desc));
-      const feats = div('card-feats');
-      r.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
-      card.appendChild(feats);
-      card.addEventListener('click', () => { state.raceId = r.id; state.step = 1; renderCreation(state); });
-      grid.appendChild(card);
-    }
-    root.appendChild(grid);
+    renderRaceStep(root, state);
   } else if (state.step === 1) {
     const grid = div('grid class-grid');
     for (const c of CLASSES) {
@@ -427,8 +422,255 @@ function remainingScores(scores) {
   return [15, 14, 13, 12, 10, 8].filter(v => !used.includes(v));
 }
 
+function selectPlayableRace(state, race) {
+  state.raceId = race.id;
+  state.variantPhase = null;
+  state.variantAsi = [];
+  state.variantSkill = null;
+  state.variantFeat = null;
+  state.variantFeatChoice = null;
+  state.pendingFeat = null;
+  if (race.variantHuman) {
+    state.variantPhase = 'asi';
+  } else {
+    state.step = 1;
+  }
+  renderCreation(state);
+}
+
+function renderRaceStep(root, state) {
+  const family = state.raceFamilyId ? RACE_FAMILIES.find(f => f.id === state.raceFamilyId) : null;
+  const lineages = family ? racesForFamily(family.id) : [];
+
+  if (state.variantPhase && state.raceId) {
+    renderVariantHumanStep(root, state);
+    return;
+  }
+
+  if (family && lineages.length > 1) {
+    const label = family.choiceLabel || 'subrace';
+    root.appendChild(h('p', 'center', `Choose your ${family.name} ${label}:`));
+    const grid = div('grid sub-grid');
+    for (const r of lineages) {
+      const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
+      card.appendChild(h('div', 'card-title', r.name));
+      card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
+      card.appendChild(h('div', 'card-desc', r.desc));
+      const feats = div('card-feats');
+      r.features.slice(0, 4).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
+      card.appendChild(feats);
+      card.addEventListener('click', () => selectPlayableRace(state, r));
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+    root.appendChild(btn('← Back', () => {
+      state.raceFamilyId = null;
+      state.raceId = null;
+      renderCreation(state);
+    }));
+    return;
+  }
+
+  const grid = div('grid race-grid');
+  for (const fam of RACE_FAMILIES) {
+    const subs = racesForFamily(fam.id);
+    const card = div('card' + (state.raceFamilyId === fam.id ? ' selected' : ''));
+    card.appendChild(h('div', 'card-title', fam.name));
+    card.appendChild(h('div', 'card-sub', `Speed ${fam.speed} ft · ${fam.size}` + (fam.darkvision ? ' · Darkvision' : '') + (fam.lineageNote ? ` · ${fam.lineageNote}` : '')));
+    card.appendChild(h('div', 'card-desc', fam.desc));
+    const feats = div('card-feats');
+    fam.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
+    card.appendChild(feats);
+    card.addEventListener('click', () => {
+      state.raceFamilyId = fam.id;
+      if (subs.length <= 1) {
+        selectPlayableRace(state, subs[0] || RACE_MAP[fam.id]);
+      } else {
+        state.raceId = null;
+        renderCreation(state);
+      }
+    });
+    grid.appendChild(card);
+  }
+  root.appendChild(grid);
+}
+
+function renderVariantHumanStep(root, state) {
+  if (state.variantPhase === 'asi') {
+    root.appendChild(h('p', 'center', 'Variant Human: increase two different abilities by +1.'));
+    const grid = div('grid score-grid');
+    for (const ab of ABILITIES) {
+      const on = state.variantAsi.includes(ab);
+      const card = div('card score-card' + (on ? ' selected' : ''));
+      card.appendChild(h('div', 'card-title', ab));
+      card.appendChild(h('div', 'score-value', on ? '+1' : '—'));
+      card.addEventListener('click', () => {
+        if (on) state.variantAsi = state.variantAsi.filter(a => a !== ab);
+        else if (state.variantAsi.length < 2) state.variantAsi.push(ab);
+        else state.variantAsi = [state.variantAsi[1], ab];
+        renderCreation(state);
+      });
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+    const row = div('row-center');
+    row.appendChild(btn('← Back', () => {
+      state.variantPhase = null;
+      state.raceId = null;
+      renderCreation(state);
+    }));
+    if (state.variantAsi.length === 2) {
+      row.appendChild(btn('Continue →', () => { state.variantPhase = 'skill'; renderCreation(state); }, 'primary'));
+    }
+    root.appendChild(row);
+    return;
+  }
+
+  if (state.variantPhase === 'skill') {
+    root.appendChild(h('p', 'center', 'Variant Human: choose one skill proficiency.'));
+    const grid = div('grid loot-grid');
+    for (const sk of SKILL_LIST) {
+      const on = state.variantSkill === sk;
+      const card = div('card' + (on ? ' selected' : ''));
+      card.appendChild(h('div', 'card-title', sk));
+      card.appendChild(h('div', 'card-sub', SKILL_ABILITY[sk]));
+      card.addEventListener('click', () => { state.variantSkill = sk; renderCreation(state); });
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+    const row = div('row-center');
+    row.appendChild(btn('← Back', () => { state.variantPhase = 'asi'; renderCreation(state); }));
+    if (state.variantSkill) {
+      row.appendChild(btn('Continue →', () => { state.variantPhase = 'feat'; renderCreation(state); }, 'primary'));
+    }
+    root.appendChild(row);
+    return;
+  }
+
+  if (state.variantPhase === 'featChoice' && state.pendingFeat) {
+    const feat = state.pendingFeat;
+    const kind = feat.halfAsi ? 'ability' : feat.choice;
+    root.appendChild(h('p', 'center', `${feat.name} — make a choice`));
+    if (kind === 'ability') {
+      const options = feat.halfAsi || ABILITIES;
+      const grid = div('grid score-grid');
+      for (const ab of options) {
+        const card = div('card score-card');
+        card.appendChild(h('div', 'card-title', ab));
+        card.addEventListener('click', () => {
+          state.variantFeat = feat.id;
+          state.variantFeatChoice = ab;
+          state.pendingFeat = null;
+          state.variantPhase = null;
+          state.step = 1;
+          renderCreation(state);
+        });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
+    } else if (kind === 'element') {
+      const grid = div('grid score-grid');
+      for (const el of ELEMENT_CHOICES) {
+        const card = div('card score-card');
+        card.appendChild(h('div', 'card-title', titleCase(el)));
+        card.addEventListener('click', () => {
+          state.variantFeat = feat.id;
+          state.variantFeatChoice = el;
+          state.pendingFeat = null;
+          state.variantPhase = null;
+          state.step = 1;
+          renderCreation(state);
+        });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
+    } else if (kind === 'class') {
+      const grid = div('grid class-grid');
+      for (const cls of CLASSES) {
+        if (!cls.spellAbility) continue;
+        const card = div('card');
+        card.appendChild(h('div', 'card-title', cls.name));
+        card.appendChild(h('div', 'card-sub', `${cls.spellAbility} caster`));
+        card.addEventListener('click', () => {
+          state.variantFeat = feat.id;
+          state.variantFeatChoice = cls.id;
+          state.pendingFeat = null;
+          state.variantPhase = null;
+          state.step = 1;
+          renderCreation(state);
+        });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
+    } else if (kind === 'skills') {
+      if (!state.variantFeatSkills) state.variantFeatSkills = [];
+      const picks = state.variantFeatSkills;
+      const grid = div('grid loot-grid');
+      for (const sk of SKILL_LIST) {
+        if (sk === state.variantSkill) continue;
+        const on = picks.includes(sk);
+        const card = div('card' + (on ? ' selected' : ''));
+        card.appendChild(h('div', 'card-title', sk));
+        card.addEventListener('click', () => {
+          if (on) state.variantFeatSkills = picks.filter(s => s !== sk);
+          else if (picks.length < 3) state.variantFeatSkills = [...picks, sk];
+          renderCreation(state);
+        });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
+      if (picks.length === 3) {
+        root.appendChild(div('row-center', btn('Confirm', () => {
+          state.variantFeat = feat.id;
+          state.variantFeatChoice = picks.slice();
+          state.pendingFeat = null;
+          state.variantPhase = null;
+          state.step = 1;
+          renderCreation(state);
+        }, 'primary')));
+      }
+    }
+    root.appendChild(btn('← Back', () => { state.variantPhase = 'feat'; state.pendingFeat = null; renderCreation(state); }));
+    return;
+  }
+
+  root.appendChild(h('p', 'center', 'Variant Human: take a feat at 1st level.'));
+  const grid = div('grid class-grid feat-grid');
+  for (const f of FEATS) {
+    const card = div('card');
+    card.appendChild(h('div', 'card-title', `🎖 ${f.name}`));
+    card.appendChild(h('div', 'card-sub', f.source));
+    card.appendChild(h('div', 'card-desc', f.desc));
+    card.appendChild(btn('Take', () => {
+      const need = f.halfAsi ? 'ability' : (f.choice || null);
+      if (need) {
+        state.pendingFeat = f;
+        state.variantPhase = 'featChoice';
+        state.variantFeatSkills = [];
+        renderCreation(state);
+        return;
+      }
+      state.variantFeat = f.id;
+      state.variantFeatChoice = null;
+      state.variantPhase = null;
+      state.step = 1;
+      renderCreation(state);
+    }));
+    grid.appendChild(card);
+  }
+  root.appendChild(grid);
+  root.appendChild(btn('← Back', () => { state.variantPhase = 'skill'; renderCreation(state); }));
+}
+
 function createHero(state) {
   const rng = makeRng();
+  const race = RACE_MAP[state.raceId];
+  const racialChoices = race && race.variantHuman ? {
+    asi: state.variantAsi,
+    skill: state.variantSkill,
+    featId: state.variantFeat,
+    featChoice: state.variantFeatChoice,
+  } : null;
   const hero = createCharacter({
     raceId: state.raceId,
     classId: state.classId,
@@ -438,6 +680,7 @@ function createHero(state) {
     level: 1,
     hero: true,
     rng,
+    racialChoices,
   });
   hero.personality = 'The Hero';
   G.meta.hero = hero;
@@ -1260,7 +1503,7 @@ function getAbilities(u) {
   if (char.cls.id === 'monk' && Combat.hasAction(u) && res.ki && res.ki.cur > 0) add('stunning_strike');
   if (char.cls.id === 'monk') add('martial_arts', u.martialArts && Combat.hasBonus(u));
   if (char.cls.id === 'fighter' && char.subclassId === 'battle_master' && Combat.hasAction(u) && res.superiority && res.superiority.cur > 0) add('trip_attack');
-  if (char.raceId === 'dragonborn') add('breath_weapon', res.breathWeapon && res.breathWeapon.cur > 0);
+  if (isRaceFamily(char, 'dragonborn')) add('breath_weapon', res.breathWeapon && res.breathWeapon.cur > 0);
   if (char.cls.id === 'wizard') add('arcane_recovery');
   if (char.cls.id === 'druid' && char.subclassId === 'land') add('natural_recovery');
   // feat abilities

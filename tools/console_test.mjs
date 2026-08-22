@@ -97,6 +97,7 @@ step('quick press still navigates normally');
 
 // ============ 2. BOOT INTO COMBAT ============
 clickCard('Dwarf');
+clickCard('Hill Dwarf');
 clickCard('Fighter');
 clickCard('Champion');
 for (let i = 0; i < 6; i++) {

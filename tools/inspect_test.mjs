@@ -67,6 +67,7 @@ async function walkToNpc(namePart) {
 ui.titleScreen();
 clickBtn('New Hero');
 clickCard('Dwarf');
+clickCard('Hill Dwarf');
 clickCard('Fighter');
 clickCard('Champion');
 for (let i = 0; i < 6; i++) {

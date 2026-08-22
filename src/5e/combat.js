@@ -7,7 +7,7 @@ import { WEAPONS, FISTS, ARMORS, ENCHANTMENTS, CONSUMABLES } from '../data/items
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import { MONSTERS, ELITE_TRAITS, xpForCr } from '../data/monsters.js';
 import { LOCATION_MAP, OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
-import { RACE_MAP } from '../data/races.js';
+import { RACE_MAP, isRaceFamily } from '../data/races.js';
 import { clamp, uid } from '../rng.js';
 
 export const DMG_TYPES = ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder'];
@@ -353,6 +353,7 @@ export function hasNaturallyStealthy(u) {
   if (!c) return false;
   if (c.naturallyStealthy) return true;
   if (c.race && c.race.naturallyStealthy) return true;
+  // Legacy saves: Lightfoot kept the id `halfling`
   return c.raceId === 'halfling';
 }
 
@@ -361,7 +362,7 @@ export function hasMaskOfTheWild(u) {
   if (!c) return false;
   if (c.maskOfTheWild) return true;
   if (c.race && c.race.maskOfTheWild) return true;
-  return c.raceId === 'wood_elf';
+  return c.raceId === 'wood_elf' || c.raceId === 'halfelf_wood';
 }
 
 export function isObscuredByLargerCreature(combat, hider, observer) {
@@ -576,8 +577,8 @@ export function attackRoll(rng, combat, u, target, bonus, opts = {}) {
   if (adv && !dis) { const a = d20(rng), b = d20(rng); result = Math.max(a, b); second = Math.min(a, b); }
   else if (dis && !adv) { const a = d20(rng), b = d20(rng); result = Math.min(a, b); second = Math.max(a, b); }
 
-  // Halfling Lucky: reroll nat 1 once
-  if (u.char && u.char.raceId === 'halfling' && result === 1) result = d20(rng);
+  // Halfling Lucky: reroll nat 1 once (every halfling subrace)
+  if (u.char && isRaceFamily(u.char, 'halfling') && result === 1) result = d20(rng);
   // Lucky feat: poor natural rolls automatically reroll (3 points per floor)
   if (u.char && hasFeat(u.char, 'lucky') && u.char.resources && u.char.resources.luck && u.char.resources.luck.cur > 0 && result <= 10) {
     u.char.resources.luck.cur--;
@@ -696,7 +697,8 @@ export function updateVision(combat) {
   for (const u of combat.units) {
     if (u.dead || u.overboard) continue;
     if (u.team !== 'player') continue;
-    const vis = u.char && u.char.raceId && RACE_MAP[u.char.raceId].darkvision ? 8 : u.vision;
+    const raceDef = u.char && u.char.raceId && RACE_MAP[u.char.raceId];
+    const vis = raceDef && raceDef.darkvision ? Math.max(u.vision || 8, raceDef.superiorDarkvision ? 16 : 8) : u.vision;
     for (let y = Math.max(0, u.y - vis); y <= Math.min(combat.h - 1, u.y + vis); y++)
       for (let x = Math.max(0, u.x - vis); x <= Math.min(combat.w - 1, u.x + vis); x++) {
         const d = Math.abs(u.x - x) + Math.abs(u.y - y);
@@ -721,7 +723,8 @@ export function spawnEncounter(combat, party, floor, rng, opts = {}) {
   party.forEach((char, i) => {
     if (char.dead) return;
     const u = makeUnit(char, 'player', sx, sy0 + i);
-    u.vision = char.race && char.race.darkvision ? 12 : (combat.darkness ? 4 : 8);
+    u.vision = char.race && char.race.superiorDarkvision ? 24
+      : (char.race && char.race.darkvision ? 12 : (combat.darkness ? 4 : 8));
     units.push(u);
   });
 
