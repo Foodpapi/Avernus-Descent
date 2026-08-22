@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-19T12:09:08.314Z",
+  "generated": "2026-08-22T06:08:18.306Z",
   "base": "assets/sounds/",
   "extensions": [
     ".ogg",
@@ -8,7 +8,7 @@
   ],
   "note": "Each slot lists the path without extension; drop any of the supported extensions. Missing slots are silent at runtime.",
   "totalSlots": 242,
-  "presentCount": 0,
+  "presentCount": 78,
   "slots": [
     {
       "path": "ambience/avernus",
@@ -80,43 +80,43 @@
       "path": "combat/crit",
       "desc": "Heavy critical-hit impact",
       "optional": false,
-      "file": null
+      "file": "crit.mp3"
     },
     {
       "path": "combat/fall",
       "desc": "Body hits the ground (prone, grease slip)",
       "optional": false,
-      "file": null
+      "file": "fall.mp3"
     },
     {
       "path": "combat/hazard_brambles",
       "desc": "Thorns rustle and tear (brambles damage)",
       "optional": false,
-      "file": null
+      "file": "hazard_brambles.mp3"
     },
     {
       "path": "combat/hazard_fire",
       "desc": "Flames crackle (fire hazard damage)",
       "optional": false,
-      "file": null
+      "file": "hazard_fire.mp3"
     },
     {
       "path": "combat/hazard_grease",
       "desc": "Slippery splat (grease slip)",
       "optional": false,
-      "file": null
+      "file": "hazard_grease.mp3"
     },
     {
       "path": "combat/hazard_lava",
       "desc": "Lava sizzle (lava hazard damage)",
       "optional": false,
-      "file": null
+      "file": "hazard_lava.mp3"
     },
     {
       "path": "combat/hazard_water",
       "desc": "Splash (water hazard)",
       "optional": false,
-      "file": null
+      "file": "hazard_water.mp3"
     },
     {
       "path": "combat/hit_flesh",
@@ -128,19 +128,19 @@
       "path": "combat/miss",
       "desc": "Attack swings through empty air",
       "optional": false,
-      "file": null
+      "file": "miss.mp3"
     },
     {
       "path": "combat/shove",
       "desc": "Shove / shove-aside thud and scuffle",
       "optional": false,
-      "file": null
+      "file": "shove.mp3"
     },
     {
       "path": "combat/start",
       "desc": "Encounter start sting (floor intro → first round)",
       "optional": false,
-      "file": null
+      "file": "start.mp3"
     },
     {
       "path": "footsteps/avernus",
@@ -158,7 +158,7 @@
       "path": "footsteps/dirt",
       "desc": "Footstep on dirt — packed earth",
       "optional": false,
-      "file": null
+      "file": "dirt.mp3"
     },
     {
       "path": "footsteps/dungeon",
@@ -188,7 +188,7 @@
       "path": "footsteps/grass",
       "desc": "Footstep on grass — soft turf",
       "optional": false,
-      "file": null
+      "file": "grass.mp3"
     },
     {
       "path": "footsteps/hub",
@@ -200,13 +200,13 @@
       "path": "footsteps/lava",
       "desc": "Footstep on lava — sizzling hell-rock",
       "optional": false,
-      "file": null
+      "file": "lava.mp3"
     },
     {
       "path": "footsteps/metal",
       "desc": "Footstep on metal — clanking grating",
       "optional": false,
-      "file": null
+      "file": "metal.mp3"
     },
     {
       "path": "footsteps/mountain_pass",
@@ -224,7 +224,7 @@
       "path": "footsteps/sand",
       "desc": "Footstep on sand — loose sand",
       "optional": false,
-      "file": null
+      "file": "sand.mp3"
     },
     {
       "path": "footsteps/ship",
@@ -236,13 +236,13 @@
       "path": "footsteps/snow",
       "desc": "Footstep on snow — crunched snow",
       "optional": false,
-      "file": null
+      "file": "snow.mp3"
     },
     {
       "path": "footsteps/stone",
       "desc": "Footstep on stone — cobbles, rock, flagstone",
       "optional": false,
-      "file": null
+      "file": "stone.mp3"
     },
     {
       "path": "footsteps/tavern",
@@ -260,43 +260,43 @@
       "path": "footsteps/water",
       "desc": "Footstep on water — wading splash",
       "optional": false,
-      "file": null
+      "file": "water.mp3"
     },
     {
       "path": "footsteps/wood",
       "desc": "Footstep on wood — planks, decking, floorboards",
       "optional": false,
-      "file": null
+      "file": "wood.mp3"
     },
     {
       "path": "items/chest_open",
       "desc": "Victory loot chest creaks open",
       "optional": false,
-      "file": null
+      "file": "chest_open.mp3"
     },
     {
       "path": "items/glass_break",
       "desc": "Glass shatters on impact",
       "optional": false,
-      "file": null
+      "file": "glass_break.mp3"
     },
     {
       "path": "items/gold",
       "desc": "Coins jingle (loot screen)",
       "optional": false,
-      "file": null
+      "file": "gold.mp3"
     },
     {
       "path": "items/potion_drink",
       "desc": "Gulp — cork pop and swallow",
       "optional": false,
-      "file": null
+      "file": "potion_drink.mp3"
     },
     {
       "path": "items/potion_throw",
       "desc": "Flask flies through the air",
       "optional": false,
-      "file": null
+      "file": "potion_throw.mp3"
     },
     {
       "path": "items/scroll",
@@ -392,7 +392,7 @@
       "path": "music/title",
       "desc": "Main menu theme",
       "optional": false,
-      "file": null
+      "file": "title.mp3"
     },
     {
       "path": "music/town",
@@ -410,7 +410,7 @@
       "path": "spells/acid",
       "desc": "Shared acid spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "acid.mp3"
     },
     {
       "path": "spells/acid_splash",
@@ -458,7 +458,7 @@
       "path": "spells/bless",
       "desc": "Bless — cast sound",
       "optional": true,
-      "file": null
+      "file": "bless.wav"
     },
     {
       "path": "spells/blight",
@@ -482,7 +482,7 @@
       "path": "spells/buff",
       "desc": "Empowering shimmer (bless, haste, mage armor…)",
       "optional": false,
-      "file": null
+      "file": "buff.mp3"
     },
     {
       "path": "spells/burning_hands",
@@ -494,13 +494,13 @@
       "path": "spells/call_lightning",
       "desc": "Call Lightning — cast sound",
       "optional": true,
-      "file": null
+      "file": "call_lightning.wav"
     },
     {
       "path": "spells/cast_generic",
       "desc": "Generic spell-cast whoosh (last-resort fallback)",
       "optional": false,
-      "file": null
+      "file": "cast_generic.mp3"
     },
     {
       "path": "spells/chain_lightning",
@@ -536,7 +536,7 @@
       "path": "spells/cold",
       "desc": "Shared cold spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "cold.mp3"
     },
     {
       "path": "spells/cone_of_cold",
@@ -572,7 +572,7 @@
       "path": "spells/debuff",
       "desc": "Cursed chime (bane, hold person, slow…)",
       "optional": false,
-      "file": null
+      "file": "debuff.mp3"
     },
     {
       "path": "spells/dimension_door",
@@ -608,13 +608,13 @@
       "path": "spells/eldritch_blast",
       "desc": "Eldritch Blast — cast sound",
       "optional": true,
-      "file": null
+      "file": "eldritch_blast.wav"
     },
     {
       "path": "spells/entangle",
       "desc": "Entangle — cast sound",
       "optional": true,
-      "file": null
+      "file": "entangle.wav"
     },
     {
       "path": "spells/expeditious_retreat",
@@ -644,7 +644,7 @@
       "path": "spells/fire",
       "desc": "Shared fire spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "fire.mp3"
     },
     {
       "path": "spells/fire_bolt",
@@ -668,7 +668,7 @@
       "path": "spells/fireball",
       "desc": "Fireball — cast sound",
       "optional": true,
-      "file": null
+      "file": "fireball.wav"
     },
     {
       "path": "spells/flame_strike",
@@ -686,13 +686,13 @@
       "path": "spells/fog_cloud",
       "desc": "Fog Cloud — cast sound",
       "optional": true,
-      "file": null
+      "file": "fog_cloud.wav"
     },
     {
       "path": "spells/force",
       "desc": "Shared force spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "force.mp3"
     },
     {
       "path": "spells/grease",
@@ -722,7 +722,7 @@
       "path": "spells/heal",
       "desc": "Heal — cast sound",
       "optional": false,
-      "file": null
+      "file": "heal.mp3"
     },
     {
       "path": "spells/healing_word",
@@ -782,7 +782,7 @@
       "path": "spells/impact",
       "desc": "Magic impact on a target (spell attack lands / save failed)",
       "optional": false,
-      "file": null
+      "file": "impact.mp3"
     },
     {
       "path": "spells/inflict_wounds",
@@ -794,7 +794,7 @@
       "path": "spells/invisibility",
       "desc": "Invisibility — cast sound",
       "optional": true,
-      "file": null
+      "file": "invisibility.wav"
     },
     {
       "path": "spells/lesser_restoration",
@@ -806,7 +806,7 @@
       "path": "spells/lightning",
       "desc": "Shared lightning spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "lightning.mp3"
     },
     {
       "path": "spells/lightning_bolt",
@@ -824,7 +824,7 @@
       "path": "spells/magic_missile",
       "desc": "Magic Missile — cast sound",
       "optional": true,
-      "file": null
+      "file": "magic_missile.wav"
     },
     {
       "path": "spells/mass_cure_wounds",
@@ -848,7 +848,7 @@
       "path": "spells/mind_spike",
       "desc": "Mind Spike — cast sound",
       "optional": true,
-      "file": null
+      "file": "mind_spike.wav"
     },
     {
       "path": "spells/mirror_image",
@@ -860,7 +860,7 @@
       "path": "spells/misty_step",
       "desc": "Misty Step — cast sound",
       "optional": true,
-      "file": null
+      "file": "misty_step.wav"
     },
     {
       "path": "spells/moonbeam",
@@ -872,7 +872,7 @@
       "path": "spells/necrotic",
       "desc": "Shared necrotic spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "necrotic.mp3"
     },
     {
       "path": "spells/pass_without_trace",
@@ -884,13 +884,13 @@
       "path": "spells/physical",
       "desc": "Shared physical spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "physical.mp3"
     },
     {
       "path": "spells/poison",
       "desc": "Shared poison spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "poison.mp3"
     },
     {
       "path": "spells/polymorph",
@@ -920,19 +920,19 @@
       "path": "spells/psychic",
       "desc": "Shared psychic spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "psychic.mp3"
     },
     {
       "path": "spells/radiant",
       "desc": "Shared radiant spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "radiant.mp3"
     },
     {
       "path": "spells/ray_of_frost",
       "desc": "Ray of Frost — cast sound",
       "optional": true,
-      "file": null
+      "file": "ray_of_frost.wav"
     },
     {
       "path": "spells/revivify",
@@ -944,13 +944,13 @@
       "path": "spells/sacred_flame",
       "desc": "Sacred Flame — cast sound",
       "optional": true,
-      "file": null
+      "file": "sacred_flame.wav"
     },
     {
       "path": "spells/scorching_ray",
       "desc": "Scorching Ray — cast sound",
       "optional": true,
-      "file": null
+      "file": "scorching_ray.wav"
     },
     {
       "path": "spells/searing_smite",
@@ -980,7 +980,7 @@
       "path": "spells/sleep",
       "desc": "Sleep — cast sound",
       "optional": true,
-      "file": null
+      "file": "sleep.wav"
     },
     {
       "path": "spells/slow",
@@ -1046,7 +1046,7 @@
       "path": "spells/thunder",
       "desc": "Shared thunder spell sound (fallback for spells of this damage type)",
       "optional": false,
-      "file": null
+      "file": "thunder.mp3"
     },
     {
       "path": "spells/thunder_step",
@@ -1070,7 +1070,7 @@
       "path": "spells/utility",
       "desc": "Utility magic murmur (misty step, darkness…)",
       "optional": false,
-      "file": null
+      "file": "utility.mp3"
     },
     {
       "path": "spells/vampiric_touch",
@@ -1082,7 +1082,7 @@
       "path": "spells/vicious_mockery",
       "desc": "Vicious Mockery — cast sound",
       "optional": true,
-      "file": null
+      "file": "vicious_mockery.wav"
     },
     {
       "path": "spells/wall_of_fire",
@@ -1100,7 +1100,7 @@
       "path": "spells/web",
       "desc": "Web — cast sound",
       "optional": true,
-      "file": null
+      "file": "web.wav"
     },
     {
       "path": "spells/wrathful_smite",
@@ -1112,13 +1112,13 @@
       "path": "ui/click",
       "desc": "Generic menu click — plays on every button press",
       "optional": false,
-      "file": null
+      "file": "click.mp3"
     },
     {
       "path": "ui/close",
       "desc": "Panel / modal / radial menu closes",
       "optional": false,
-      "file": null
+      "file": "close.mp3"
     },
     {
       "path": "ui/equip",
@@ -1130,13 +1130,13 @@
       "path": "ui/error",
       "desc": "Invalid action — no points left, bad target, can't cast",
       "optional": false,
-      "file": null
+      "file": "error.mp3"
     },
     {
       "path": "ui/gold",
       "desc": "Coins — buying, selling, looting gold",
       "optional": false,
-      "file": null
+      "file": "gold.mp3"
     },
     {
       "path": "ui/hover",
@@ -1148,19 +1148,19 @@
       "path": "ui/levelup",
       "desc": "Level-up / new ability fanfare",
       "optional": false,
-      "file": null
+      "file": "levelup.mp3"
     },
     {
       "path": "ui/open",
       "desc": "Panel / modal / radial menu opens",
       "optional": false,
-      "file": null
+      "file": "open.mp3"
     },
     {
       "path": "units/death",
       "desc": "Creature dies — death rattle / collapse",
       "optional": false,
-      "file": null
+      "file": "death.mp3"
     },
     {
       "path": "units/grunt_1",
@@ -1190,13 +1190,13 @@
       "path": "units/shapeshift",
       "desc": "Wild shape / transformation whoosh",
       "optional": false,
-      "file": null
+      "file": "shapeshift.mp3"
     },
     {
       "path": "weapons/arrow_hit",
       "desc": "Arrow / bolt strikes a target",
       "optional": false,
-      "file": null
+      "file": "arrow_hit.mp3"
     },
     {
       "path": "weapons/battleaxe",
@@ -1214,7 +1214,7 @@
       "path": "weapons/bow_shot",
       "desc": "Bowstring twang + arrow release",
       "optional": false,
-      "file": null
+      "file": "bow_shot.mp3"
     },
     {
       "path": "weapons/club",
@@ -1226,7 +1226,7 @@
       "path": "weapons/crossbow_shot",
       "desc": "Crossbow thunk + bolt release",
       "optional": false,
-      "file": null
+      "file": "crossbow_shot.mp3"
     },
     {
       "path": "weapons/dagger",
@@ -1298,19 +1298,19 @@
       "path": "weapons/hit_blunt",
       "desc": "Crunching bludgeoning impact",
       "optional": false,
-      "file": null
+      "file": "hit_blunt.mp3"
     },
     {
       "path": "weapons/hit_slash",
       "desc": "Blade bites flesh (slashing impact)",
       "optional": false,
-      "file": null
+      "file": "hit_slash.mp3"
     },
     {
       "path": "weapons/hit_stab",
       "desc": "Point sinks in (piercing impact)",
       "optional": false,
-      "file": null
+      "file": "hit_stab.mp3"
     },
     {
       "path": "weapons/javelin",
@@ -1412,7 +1412,7 @@
       "path": "weapons/sling_shot",
       "desc": "Sling whirl and release",
       "optional": false,
-      "file": null
+      "file": "sling_shot.mp3"
     },
     {
       "path": "weapons/spear",
@@ -1424,31 +1424,31 @@
       "path": "weapons/swing_blunt",
       "desc": "Heavy club / hammer swing",
       "optional": false,
-      "file": null
+      "file": "swing_blunt.mp3"
     },
     {
       "path": "weapons/swing_slash",
       "desc": "Sword / axe whoosh through air",
       "optional": false,
-      "file": null
+      "file": "swing_slash.mp3"
     },
     {
       "path": "weapons/swing_stab",
       "desc": "Stabbing lunge whoosh",
       "optional": false,
-      "file": null
+      "file": "swing_stab.mp3"
     },
     {
       "path": "weapons/unarmed_hit",
       "desc": "Bare-knuckle punch lands",
       "optional": false,
-      "file": null
+      "file": "unarmed_hit.mp3"
     },
     {
       "path": "weapons/unarmed_swing",
       "desc": "Fist / paw swipes air",
       "optional": false,
-      "file": null
+      "file": "unarmed_swing.mp3"
     },
     {
       "path": "weapons/warhammer",

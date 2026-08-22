@@ -7,7 +7,7 @@ import { WEAPONS, FISTS, ARMORS, ENCHANTMENTS, CONSUMABLES } from '../data/items
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import { MONSTERS, ELITE_TRAITS, xpForCr } from '../data/monsters.js';
 import { LOCATION_MAP, OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
-import { RACE_MAP } from '../data/races.js';
+import { RACE_MAP, raceFlag } from '../data/races.js';
 import { clamp, uid } from '../rng.js';
 
 export const DMG_TYPES = ['acid', 'bludgeoning', 'cold', 'fire', 'force', 'lightning', 'necrotic', 'piercing', 'poison', 'psychic', 'radiant', 'slashing', 'thunder'];
@@ -352,16 +352,14 @@ export function hasNaturallyStealthy(u) {
   const c = u && u.char;
   if (!c) return false;
   if (c.naturallyStealthy) return true;
-  if (c.race && c.race.naturallyStealthy) return true;
-  return c.raceId === 'halfling';
+  return raceFlag(c, 'naturallyStealthy');
 }
 
 export function hasMaskOfTheWild(u) {
   const c = u && u.char;
   if (!c) return false;
   if (c.maskOfTheWild) return true;
-  if (c.race && c.race.maskOfTheWild) return true;
-  return c.raceId === 'wood_elf';
+  return raceFlag(c, 'maskOfTheWild');
 }
 
 export function isObscuredByLargerCreature(combat, hider, observer) {
@@ -548,6 +546,17 @@ export function roll(rng, dice, bonus = 0) {
 
 export function d20(rng) { return rng.int(1, 20); }
 
+// PHB Sunlight Sensitivity: "when you, the target of your attack, or whatever
+// you are trying to perceive is in direct sunlight." Outdoor / open-sky
+// locations count; interiors (tavern, dungeon, ruins) and Avernus do not.
+export const SUNLIT_LOCS = new Set(['mountain_pass', 'town', 'forest', 'fey', 'ship']);
+
+export function isSunlit(combat) {
+  if (!combat) return false;
+  const id = combat.locId || (combat.loc && combat.loc.id);
+  return !!(id && SUNLIT_LOCS.has(id));
+}
+
 // advantage/disadvantage resolution
 export function attackRoll(rng, combat, u, target, bonus, opts = {}) {
   let adv = false, dis = false;
@@ -570,14 +579,16 @@ export function attackRoll(rng, combat, u, target, bonus, opts = {}) {
   if (opts.obscured) dis = true;
   if (opts.bane) dis = true;
   if (opts.bless) adv = false; // handled as die below
+  // PHB Sunlight Sensitivity: disadvantage on attack rolls in direct sunlight
+  if (u.char && raceFlag(u.char, 'sunlightSensitivity') && isSunlit(combat)) dis = true;
 
   let result = d20(rng);
   let second = null;
   if (adv && !dis) { const a = d20(rng), b = d20(rng); result = Math.max(a, b); second = Math.min(a, b); }
   else if (dis && !adv) { const a = d20(rng), b = d20(rng); result = Math.min(a, b); second = Math.max(a, b); }
 
-  // Halfling Lucky: reroll nat 1 once
-  if (u.char && u.char.raceId === 'halfling' && result === 1) result = d20(rng);
+  // Halfling Lucky (Lightfoot + Stout): reroll nat 1 once
+  if (u.char && raceFlag(u.char, 'lucky') && result === 1) result = d20(rng);
   // Lucky feat: poor natural rolls automatically reroll (3 points per floor)
   if (u.char && hasFeat(u.char, 'lucky') && u.char.resources && u.char.resources.luck && u.char.resources.luck.cur > 0 && result <= 10) {
     u.char.resources.luck.cur--;
@@ -721,7 +732,8 @@ export function spawnEncounter(combat, party, floor, rng, opts = {}) {
   party.forEach((char, i) => {
     if (char.dead) return;
     const u = makeUnit(char, 'player', sx, sy0 + i);
-    u.vision = char.race && char.race.darkvision ? 12 : (combat.darkness ? 4 : 8);
+    const racialVis = (char.vision != null) ? char.vision : ((char.race && char.race.vision) || (char.race && char.race.darkvision ? 12 : 8));
+    u.vision = (combat.darkness && !(char.race && char.race.darkvision) && racialVis <= 8) ? 4 : racialVis;
     units.push(u);
   });
 

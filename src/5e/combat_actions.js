@@ -4,7 +4,7 @@
 import { mod, attackBonusFor, weaponDiceFor, weaponStatFor, isProficientWithWeapon, sneakAttackDice, isFinesseOrRanged, savingThrowMod, spellSlotSummary, canCastSpell, computeSpeed, WILD_SHAPES, townMod, hasFeat, skillMod, passivePerception } from './rules.js';
 import { WEAPONS, FISTS, CONSUMABLES, ENCHANTMENTS, ARMORS } from '../data/items.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
-import { RACE_MAP } from '../data/races.js';
+import { RACE_MAP, raceFlag } from '../data/races.js';
 import { OBSTACLES, obstacleBlocksProjectile } from '../data/locations.js';
 import { clamp } from '../rng.js';
 import * as Audio from '../game/audio.js';
@@ -47,7 +47,7 @@ function rollStealth(combat, u) {
   const bonus = stealthBonusFor(u);
   const rollOnce = () => {
     let n = d20(combat.rng);
-    if (u.char && u.char.raceId === 'halfling' && n === 1) n = d20(combat.rng);
+    if (u.char && raceFlag(u.char, 'lucky') && n === 1) n = d20(combat.rng);
     return n;
   };
   let a = rollOnce();
@@ -931,7 +931,10 @@ export function applyMonsterAttackFx(combat, attacker, target, fx) {
     }
     case 'poison_dc11': case 'poison_dc12': case 'poison_dc14': {
       const dc = Number(fx.split('dc')[1]);
-      const save = d20(combat.rng) + (target.char.stats ? mod(target.char.stats.CON) : savingThrowMod(target.char, 'CON'));
+      let saveDie = d20(combat.rng);
+      if (raceFlag(target.char, 'lucky') && saveDie === 1) saveDie = d20(combat.rng);
+      if (raceFlag(target.char, 'poisonSaveAdv')) saveDie = Math.max(saveDie, d20(combat.rng));
+      const save = saveDie + (target.char.stats ? mod(target.char.stats.CON) : savingThrowMod(target.char, 'CON'));
       if (save < dc) {
         const dmg = roll(combat.rng, fx === 'poison_dc14' ? '3d6' : '2d6');
         addStatus(target, 'poisoned', 'Poisoned', 3);
@@ -1049,16 +1052,21 @@ export function castSpell(combat, caster, spellId, opts = {}) {
   const result = { ok: true, dmg: 0 };
 
   const getSaveMod = (target, ab) => target.char.stats ? mod(target.char.stats[ab]) : savingThrowMod(target.char, ab);
-  const rollSave = (target, ab, adv) => {
+  const rollSave = (target, ab, adv, kind) => {
     let s = d20(combat.rng);
     if (target.char && hasFeat(target.char, 'lucky') && target.char.resources && target.char.resources.luck && target.char.resources.luck.cur > 0 && s <= 10) {
       target.char.resources.luck.cur--;
       s = Math.max(s, d20(combat.rng));
     }
-    const gnome = target.char.raceId === 'gnome' && ['INT', 'WIS', 'CHA'].includes(ab);
-    const dwarf = target.char.raceId === 'dwarf' && ab === 'CON' && (target.char.stats && false); // only for PC saves
-    const brave = target.char.raceId === 'halfling' && ab === 'WIS';
-    if (gnome || brave || adv) s = Math.max(s, d20(combat.rng));
+    // PHB Halfling Lucky: reroll a natural 1 on a save, once
+    if (target.char && raceFlag(target.char, 'lucky') && s === 1) s = d20(combat.rng);
+    // Gnome Cunning: adv on INT/WIS/CHA saves vs magic (spell saves here)
+    const gnome = raceFlag(target.char, 'gnomeCunning') && ['INT', 'WIS', 'CHA'].includes(ab);
+    // Dwarven / Stout Resilience: adv on saves vs poison only (RAW)
+    const poison = raceFlag(target.char, 'poisonSaveAdv') && ab === 'CON' && kind === 'poison';
+    // Brave: adv on saves vs being frightened only (RAW)
+    const brave = raceFlag(target.char, 'brave') && kind === 'frightened';
+    if (gnome || poison || brave || adv) s = Math.max(s, d20(combat.rng));
     const bane = getStatus(target, 'baned');
     if (bane) s -= combat.rng.int(1, 4);
     const blessed = target.char.buffs && target.char.buffs.find(b => b.id === 'bless');
@@ -1142,7 +1150,7 @@ function resolveCone(combat, caster, sp, opts, dc, rollSave, result) {
     if (friendly && !sculpt && sp.fx !== 'fear') continue; // most cones don't hit allies
     if (sp.dmg) {
       const dmg = roll(combat.rng, upcastDmg(sp.dmg, upcastDmgLevel(sp)));
-      const save = rollSave(u, sp.save);
+      const save = rollSave(u, sp.save, false, sp.dmgType === 'poison' ? 'poison' : undefined);
       if (save >= dc) {
         const half = sp.halfOnSave ? Math.floor(dmg / 2) : 0;
         log(combat, `${u.name} saves vs ${sp.name} (${half} ${sp.dmgType}).`);
@@ -1155,7 +1163,7 @@ function resolveCone(combat, caster, sp, opts, dc, rollSave, result) {
     }
     if (sp.fx === 'fear') {
       if (!friendly) {
-        const save = rollSave(u, 'WIS');
+        const save = rollSave(u, 'WIS', false, 'frightened');
         if (save < dc) { addStatus(u, 'frightened', 'Frightened', 3, { source: caster.id }); log(combat, `😱 ${u.name} is frightened!`); }
       }
       startConcentration(combat, caster, sp.id, null);
@@ -1181,7 +1189,7 @@ function resolveLine(combat, caster, sp, opts, dc, rollSave, result) {
     const u = unitAt(combat, x, y);
     if (!u) continue;
     const dmg = roll(combat.rng, sp.dmg);
-    const save = rollSave(u, sp.save);
+    const save = rollSave(u, sp.save, false, sp.dmgType === 'poison' ? 'poison' : undefined);
     if (save >= dc) total += applyDamage(combat, u, caster, Math.floor(dmg / 2), sp.dmgType, { aoe: true, magical: true }).dealt;
     else total += applyDamage(combat, u, caster, dmg, sp.dmgType, { aoe: true, magical: true }).dealt;
   }
@@ -1532,7 +1540,7 @@ function resolveGenericSpell(combat, caster, sp, opts, targets, dc, atk, upcast,
   // saving-throw spells
   if (sp.save && (sp.dmg || sp.fx)) {
     if (!u) return { ok: true };
-    const save = rollSave(u, sp.save);
+    const save = rollSave(u, sp.save, false, sp.dmgType === 'poison' ? 'poison' : undefined);
     if (sp.dmg) {
       const dmgStr = typeof sp.dmg === 'string' ? sp.dmg : cantripDmg(sp, c.char.level);
       const dmg = roll(combat.rng, dmgStr);
@@ -1884,7 +1892,7 @@ function upcastHeal(heal, upcast) {
 export function applySpellDamage(combat, c, u, sp, dc, rollSave, result, total) {
   const dmgStr = typeof sp.dmg === 'string' ? sp.dmg : cantripDmg(sp, c.char.level);
   const dmg = roll(combat.rng, dmgStr);
-  const save = rollSave(u, sp.save);
+  const save = rollSave(u, sp.save, false, sp.dmgType === 'poison' ? 'poison' : undefined);
   if (save >= dc) {
     const half = sp.halfOnSave ? Math.floor(dmg / 2) : 0;
     if (half > 0) Audio.play('spells/impact', { vol: 0.7, throttle: 120 });
@@ -2210,7 +2218,10 @@ export function tickStatuses(combat, u) {
     if (e.type === 'cloudkill') {
       const caster = combat.units.find(x => x.id === e.source);
       const dc = caster ? caster.char.spellSaveDC : 15;
-      const save = d20(combat.rng) + (char.stats ? mod(char.stats.CON) : savingThrowMod(char, 'CON'));
+      let ckDie = d20(combat.rng);
+      if (raceFlag(char, 'lucky') && ckDie === 1) ckDie = d20(combat.rng);
+      if (raceFlag(char, 'poisonSaveAdv')) ckDie = Math.max(ckDie, d20(combat.rng));
+      const save = ckDie + (char.stats ? mod(char.stats.CON) : savingThrowMod(char, 'CON'));
       if (save >= dc) applyDamage(combat, u, caster, Math.floor(roll(combat.rng, '5d8') / 2), 'poison', { aoe: true, quiet: true, magical: true });
       else applyDamage(combat, u, caster, roll(combat.rng, '5d8'), 'poison', { aoe: true, quiet: true, magical: true });
     }
@@ -2269,7 +2280,8 @@ export function tickStartOfTurn(combat, u) {
     const s = getStatus(u, 'dying');
     s.fails = s.fails || 0;
     s.successes = s.successes || 0;
-    const rollVal = d20(combat.rng);
+    let rollVal = d20(combat.rng);
+    if (u.char && raceFlag(u.char, 'lucky') && rollVal === 1) rollVal = d20(combat.rng);
     if (rollVal === 20) { s.successes += 2; log(combat, `🌟 ${u.name} makes a miraculous recovery (death save 20)!`); }
     else if (rollVal >= 10) { s.successes += 1; log(combat, `💗 ${u.name} succeeds a death save (${s.successes}/3).`); }
     else if (rollVal === 1) { s.fails += 2; log(combat, `💔 ${u.name} critically fails a death save (${s.fails}/3)!`); }

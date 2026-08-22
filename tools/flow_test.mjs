@@ -54,7 +54,9 @@ const clickBtn = (labelPart) => {
   b.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
 };
 const clickCard = (labelPart) => {
-  const c = [...document.querySelectorAll('.card')].find(x => x.textContent.includes(labelPart));
+  const cards = [...document.querySelectorAll('.card')];
+  const exact = cards.find(x => x.querySelector('.card-title')?.textContent.trim() === labelPart);
+  const c = exact || cards.find(x => x.textContent.includes(labelPart));
   if (!c) throw new Error(`Card not found: ${labelPart}`);
   c.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
 };
@@ -65,9 +67,11 @@ step('title screen');
 clickBtn('New Hero');
 step('clicked New Hero → creation (race step)');
 
-// 2. pick race
+// 2. pick race, then PHB subrace
 clickCard('Dwarf');
-step('picked race → class step');
+step('picked Dwarf → subrace step');
+clickCard('Hill Dwarf');
+step('picked Hill Dwarf → class step');
 
 // 3. pick class
 clickCard('Paladin');

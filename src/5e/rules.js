@@ -1,7 +1,7 @@
 // Core 5e rules: ability modifiers, proficiency, character creation,
 // AC, HP, leveling, gear. Combat resolution lives in combat.js.
 
-import { RACE_MAP, baseAbilityScores, SKILL_ABILITY } from '../data/races.js';
+import { RACE_MAP, baseAbilityScores, SKILL_ABILITY, raceFlag } from '../data/races.js';
 import { CLASS_MAP, PROF_BY_LEVEL, ASI_LEVELS, attacksPerAction, spellSlotsAt, pactSlotsAt, CANTRIP_COUNTS } from '../data/classes.js';
 import { SPELL_MAP, SPELL_LISTS, cantripDmg } from '../data/spells.js';
 import { WEAPONS, ARMORS, SHIELDS, FISTS } from '../data/items.js';
@@ -94,6 +94,35 @@ export function randomName(rng) {
 
 export const PERSONALITIES = ['Bold', 'Cautious', 'Greedy', 'Noble', 'Sarcastic', 'Doomed', 'Cheerful', 'Grim', 'Curious', 'Vengeful'];
 
+// PHB racial cantrips / innate spells. featCantrips + featSpells survive
+// initSpellcasting rebuilds; innate entries unlock at the listed character level.
+function applyRacialMagic(char) {
+  const race = char.race || RACE_MAP[char.raceId];
+  if (!race) return;
+  if (race.cantrip && SPELL_MAP[race.cantrip]) {
+    char.featCantrips = char.featCantrips || [];
+    if (!char.featCantrips.includes(race.cantrip)) char.featCantrips.push(race.cantrip);
+    if (race.featCastAbility) char.featCastAbility = char.featCastAbility || race.featCastAbility;
+    else if (race.family === 'elf') char.featCastAbility = char.featCastAbility || 'INT';
+  }
+  if (race.innate) {
+    char.featCasts = char.featCasts || {};
+    char.featCantrips = char.featCantrips || [];
+    char.featSpells = char.featSpells || [];
+    if (race.featCastAbility) char.featCastAbility = char.featCastAbility || race.featCastAbility;
+    for (const [sid, need] of Object.entries(race.innate)) {
+      if ((char.level || 1) < need) continue;
+      if (!SPELL_MAP[sid]) continue;
+      if (SPELL_MAP[sid].level === 0) {
+        if (!char.featCantrips.includes(sid)) char.featCantrips.push(sid);
+      } else {
+        if (!char.featSpells.includes(sid)) char.featSpells.push(sid);
+        char.featCasts[sid] = true;
+      }
+    }
+  }
+}
+
 // ---- Character creation ----
 // scorePool: array of 6 values (standard array) to be placed on abilities.
 export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng }) {
@@ -139,7 +168,9 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
     personality: hero ? 'The Hero' : rng.pick(PERSONALITIES),
     wildShaped: false,
     size: race.size || 'Medium',
-    vision: race.darkvision ? 12 : 8,
+    vision: race.vision || (race.darkvision ? 12 : 8),
+    naturallyStealthy: !!race.naturallyStealthy,
+    maskOfTheWild: !!race.maskOfTheWild,
   };
 
   // Racial ASIs
@@ -169,8 +200,10 @@ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign
   // Gear by class
   equipClassGear(char);
 
-  // Spellcasting
+  // Racial cantrips / innate spells, then spell lists (feat* survive rebuilds)
+  applyRacialMagic(char);
   initSpellcasting(char);
+  recomputeDerived(char);
 
   // Resources per floor
   initResources(char);
@@ -204,6 +237,7 @@ export function computeMaxHp(char) {
   let hp = die + conModHere + (classLevel(char) - 1) * (avg + conModHere);
   if (cls.id === 'sorcerer' && char.subclassId === 'draconic') hp += classLevel(char);
   if (hasFeat(char, 'tough')) hp += char.level * 2;
+  if (char.race && char.race.dwarvenToughness) hp += char.level;
   hp += townMod(char, 'hp') * 5;
   const aid = char.buffs.find(b => b.id === 'aid');
   if (aid) hp += aid.value || 5;
@@ -280,7 +314,7 @@ export function equipClassGear(char) {
   char.trinkets = [];
   char.armorEnchant = null;
 
-  const canWear = t => char.cls.armor.includes(t);
+  const canWear = t => char.cls.armor.includes(t) || !!(char.race && char.race.armorProf && char.race.armorProf.includes(t));
   const dex = mod(char.abilities.DEX), str = mod(char.abilities.STR);
 
   switch (c) {
@@ -475,6 +509,7 @@ export function levelUpCharacter(char, rng, choices) {
     }
   }
 
+  applyRacialMagic(char);
   if (char.cls.spellAbility) {
     const before = char.spellsKnown.slice();
     initSpellcasting(char);
@@ -487,6 +522,8 @@ export function levelUpCharacter(char, rng, choices) {
       const newly = char.spellsKnown.filter(s => !before.includes(s));
       if (newly.length) gained.push(`New spells: ${newly.map(s => SPELL_MAP[s].name).join(', ')}`);
     }
+  } else {
+    initSpellcasting(char);
   }
   // subclass path opens at level 3 (unless already chosen at level 1)
   if (classLevel(char) >= 3 && !char.subclassId) char.pendingSubclass = true;
@@ -649,6 +686,8 @@ export function isProficientWithWeapon(char, weaponId) {
   if (cls.id === 'druid' && ['club', 'dagger', 'dart', 'javelin', 'mace', 'quarterstaff', 'scimitar', 'sickle', 'sling', 'spear'].includes(weaponId)) return true;
   // wizard: dagger dart sling quarterstaff light crossbow
   if (cls.id === 'wizard' && ['dagger', 'dart', 'sling', 'quarterstaff', 'light_crossbow'].includes(weaponId)) return true;
+  // PHB racial weapon training (elf / drow / dwarf)
+  if (char.race && char.race.weaponProf && char.race.weaponProf.includes(weaponId)) return true;
   return false;
 }
 

@@ -70,6 +70,7 @@ const toastText = () => document.querySelector('#toast')?.textContent || '';
 ui.titleScreen();
 clickBtn('New Hero');
 clickCard('Dwarf');
+clickCard('Hill Dwarf');
 clickCard('Wizard');
 clickCard('School of Evocation');
 for (let i = 0; i < 6; i++) {

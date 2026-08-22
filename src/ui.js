@@ -2,7 +2,7 @@
 
 import { makeRng, uid, clamp, ordinal, titleCase } from './rng.js';
 import { createCharacter, mod, computeAc, computeMaxHp, recomputeDerived, initResources, initSpellcasting, skillMod, savingThrowMod, attackBonusFor, spellSlotSummary, listCantripsKnown, listLeveledSpellsKnown, canCastSpell, highestSpellLevel, levelUpCharacter, computeSpeed, ABILITIES, ABILITY_FULL, WILD_SHAPES, wildShapeFormsFor, changeGearChar, weaponStatFor, hasFeat, grantFeat, spellRangeFor } from './5e/rules.js';
-import { RACES, RACE_MAP, SKILL_ABILITY } from './data/races.js';
+import { RACE_MAP, RACE_FAMILIES, racesInFamily, SKILL_ABILITY } from './data/races.js';
 import { CLASSES, CLASS_MAP, ASI_LEVELS } from './data/classes.js';
 import { SPELLS, SPELL_MAP, cantripDmg } from './data/spells.js';
 import { CONSUMABLES, WEAPONS, ARMORS, SHOP_ITEMS } from './data/items.js';
@@ -290,7 +290,7 @@ export function helpScreen() {
     ['🏘 The Town (every 3rd floor)', 'A long rest restores everything and resets blessings. Hire mercenaries (fight any 4 of your roster), browse a themed shop (blacksmiths skew to steel, archers to bows, rare Mind Flayer & Bhaal shops sell strange things), and try townspeople skill checks — pass for a party-wide +1 blessing until the next long rest, fail for a −1. Clerics, druids and wizards prepare their daily spells at camp.'],
 
     ['⛰ Terrain', 'High ground gives +1 to ranged attacks per elevation. Low cover (tables, crates, logs) gives +2 AC vs ranged. Tall obstacles block sight. Destroyable objects have HP bars, materials, and resistances (wood hates fire, stone hates thunder…). Hazards hurt: fire, lava, brambles, grease, deep water (don\'t fall in!).'],
-    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Halflings can hide behind a larger creature (Naturally Stealthy); Wood Elves can hide in foliage or mist (Mask of the Wild). While hidden, enemy line of sight is painted red on the map — step into it or get too close and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
+    ['🎲 Combat', '5e rules: action + bonus action + movement. Attack rolls vs AC, saving throws, advantage/disadvantage, critical hits, spell slots, concentration, conditions, death saves (fail two → death; any heal revives). Damage numbers float up color-coded by type — red fire 🔥, blue cold ❄, green acid 🧪, ⚔ slashing, ⚒ bludgeoning (✨ prefix = magical), 💚 healing. Ranged attacks, rays, magic missile and thrown items hit the FIRST body or object on the flight path — including allies (friendly fire). Mental spells (Hex, Hold Person, Sacred Flame, Vicious Mockery) are not projectiles. Objects are auto-hit; creatures still require an attack roll. Hide: you cannot hide while clearly seen (5e). Your Stealth check is contested by each foe\'s Passive Perception — they can hear you even without line of sight. Lightfoot Halflings can hide behind a larger creature (Naturally Stealthy); Wood Elves can hide in foliage or mist (Mask of the Wild). While hidden, enemy line of sight is painted red on the map — step into it or get too close and you are spotted. Rogues 2+ can Hide as a bonus action (Cunning Action). Bows and thrown weapons fly as on-screen projectiles.'],
     ['🎖 Feats', 'ASIs and feats follow CLASS level (5e rules): at class levels 4, 8, 12, 16 and 19 — plus 6 & 14 for fighters and 10 for rogues — you may take a FEAT instead of the ability score increase. Multiclassing does not change your class-level milestones: a Wizard 3 / Barbarian 1 gets no ASI until one of those classes reaches its milestone. 29 feats with real mechanics: Great Weapon Master & Sharpshooter (toggleable -5/+10), Polearm Master, Sentinel, War Caster, Elemental Adept, Lucky, Mobile, Charger, Tough, Resilient, Magic Initiate and more.'],
 
     ['🎁 Loot', 'After each victory choose loot: weapons (possibly enchanted), armor, potions, scrolls. Boss floors (every 3rd) drop better loot.'],
@@ -309,7 +309,7 @@ export function helpScreen() {
 export function creationScreen() {
   const state = {
     step: 0,
-    raceId: null, classId: null, subclassId: null,
+    raceFamily: null, raceId: null, classId: null, subclassId: null,
     scores: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
     name: '',
   };
@@ -326,19 +326,51 @@ function renderCreation(state) {
   root.appendChild(steps);
 
   if (state.step === 0) {
-    const grid = div('grid race-grid');
-    for (const r of RACES) {
-      const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
-      card.appendChild(h('div', 'card-title', r.name));
-      card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
-      card.appendChild(h('div', 'card-desc', r.desc));
-      const feats = div('card-feats');
-      r.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
-      card.appendChild(feats);
-      card.addEventListener('click', () => { state.raceId = r.id; state.step = 1; renderCreation(state); });
-      grid.appendChild(card);
+    const familyMembers = state.raceFamily ? racesInFamily(state.raceFamily) : null;
+    const pickingSubrace = !!(familyMembers && familyMembers.length > 1 && !state.raceId);
+    if (pickingSubrace) {
+      const fam = RACE_FAMILIES.find(f => f.id === state.raceFamily);
+      root.appendChild(h('p', 'center', `Choose your ${fam ? fam.name : 'racial'} subrace:`));
+      const grid = div('grid race-grid');
+      for (const r of familyMembers) {
+        const card = div('card' + (state.raceId === r.id ? ' selected' : ''));
+        card.appendChild(h('div', 'card-title', r.name));
+        card.appendChild(h('div', 'card-sub', `Speed ${r.speed} ft · ${r.size}` + (r.darkvision ? ' · Darkvision' : '')));
+        card.appendChild(h('div', 'card-desc', r.desc));
+        const feats = div('card-feats');
+        r.features.slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
+        card.appendChild(feats);
+        card.addEventListener('click', () => { state.raceId = r.id; state.step = 1; renderCreation(state); });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
+      root.appendChild(btn('← Back', () => { state.raceFamily = null; state.raceId = null; renderCreation(state); }));
+    } else {
+      const grid = div('grid race-grid');
+      for (const fam of RACE_FAMILIES) {
+        const members = racesInFamily(fam.id);
+        const card = div('card' + (state.raceFamily === fam.id ? ' selected' : ''));
+        card.appendChild(h('div', 'card-title', fam.name));
+        const nSub = members.length;
+        card.appendChild(h('div', 'card-sub', `Speed ${fam.speed} ft · ${fam.size}` + (fam.darkvision ? ' · Darkvision' : '') + (nSub > 1 ? ` · ${nSub} subraces` : '')));
+        card.appendChild(h('div', 'card-desc', fam.desc));
+        const feats = div('card-feats');
+        (fam.features || []).slice(0, 3).forEach(f => feats.appendChild(h('span', 'feat', f.name)));
+        card.appendChild(feats);
+        card.addEventListener('click', () => {
+          state.raceFamily = fam.id;
+          if (members.length === 1) {
+            state.raceId = members[0].id;
+            state.step = 1;
+          } else {
+            state.raceId = null;
+          }
+          renderCreation(state);
+        });
+        grid.appendChild(card);
+      }
+      root.appendChild(grid);
     }
-    root.appendChild(grid);
   } else if (state.step === 1) {
     const grid = div('grid class-grid');
     for (const c of CLASSES) {
@@ -350,7 +382,18 @@ function renderCreation(state) {
       grid.appendChild(card);
     }
     root.appendChild(grid);
-    root.appendChild(btn('← Back', () => { state.step = 0; renderCreation(state); }));
+    root.appendChild(btn('← Back', () => {
+      const members = racesInFamily(state.raceFamily || (RACE_MAP[state.raceId] && RACE_MAP[state.raceId].family));
+      if (members.length > 1) {
+        state.raceId = null;
+        state.raceFamily = members[0].family;
+      } else {
+        state.raceFamily = null;
+        state.raceId = null;
+      }
+      state.step = 0;
+      renderCreation(state);
+    }));
   } else if (state.step === 2) {
     const cls = CLASS_MAP[state.classId];
     root.appendChild(h('p', 'center', `Choose your ${cls.name} specialization:`));

@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-19 (v=46 hidden enemy-sight overlay)
+**Last updated:** 2026-08-19 (v=48 race → subrace creation picker)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=46"></script>` (**currently v=46** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=48"></script>` (**currently v=48** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -54,7 +54,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
   sounds, mute button + M key.
 - `src/rng.js` — `makeRng` (mulberry32), `uid`, `clamp`, `ordinal`, `weighted`, `sample`, `deepClone`.
 - `src/data/`:
-  - `races.js` — **10 races** (High Elf + Wood Elf; Halfling has `naturallyStealthy`), `SKILL_LIST`, `SKILL_ABILITY`.
+  - `races.js` — **14 selectable PHB 2014 races/subraces** + `raceOf`/`raceFlag`. Legacy ids kept: `elf` High Elf, `dwarf` Hill Dwarf, `halfling` Lightfoot, `gnome` Rock Gnome. New: `drow`, `mountain_dwarf`, `stout_halfling`, `forest_gnome`. Flags combat/rules read: `naturallyStealthy` (Lightfoot only), `maskOfTheWild`, `lucky`/`brave`, `gnomeCunning`, `dwarvenToughness`, `poisonSaveAdv`, `sunlightSensitivity`, `vision`, `weaponProf`, `armorProf`, `cantrip`/`innate`/`featCastAbility`. Skipped: Variant Human, 10 Dragonborn colors, SCAG variants. `SKILL_LIST`, `SKILL_ABILITY`.
   - `classes.js` — 12 classes; `AST_LEVELS=[4,8,12,16,19]`; **`extraAsi: [6,14]` on fighter, `[10]`
     on rogue**; slot tables `FULL_CASTER_SLOTS`/`HALF_CASTER_SLOTS`/`WARLOCK_SLOTS`; `CANTRIP_COUNTS`.
   - `spells.js` — **101 spells**, `SPELL_MAP`, `SPELL_LISTS`, `cantripDmg`, ~35 `concentration: true`
@@ -281,7 +281,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 7. Data Counts to Preserve (tests partially enforce these)
 
-9 locations · 35 objects (OBSTACLES) · 38 monsters · 12 classes · 29 feats · 18 town events ·
+9 locations · 35 objects (OBSTACLES) · 38 monsters · 12 classes · **14 playable races** · 29 feats · 18 town events ·
 10 shop items · 101 spells · 33 weapons + fists · **242 sound slots** · 278 art slots.
 
 ## 8. Deploy Ritual (EVERY ship — never skip)
@@ -290,7 +290,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=46 → next is v=47.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=48 → next is v=49.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -299,10 +299,10 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 6. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/index.html` → 200.
 7. Reply with root-cause + "what changed" bullets + **hard-refresh (Ctrl+Shift+R)** reminder.
 
-### Full test battery (27 suites)
+### Full test battery (28 suites; include race_test)
 ```bash
 cd /home/user/avernus-descent
-fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "27 suites: $fails failures · headless exit $hc"
+fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test race_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "27 suites: $fails failures · headless exit $hc"
 ```
 (jsdom suites print harmless `window.scrollTo` not-implemented warnings — ignore those; only exit
 codes matter. Do NOT run suites through `headless.js` — that file is its own suite.)
@@ -352,8 +352,8 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Hidden enemy-sight overlay restored/strengthened at **v=46**.
-  Next ship is **v=47**.
+- **Where we are:** PHB 2014 subraces shipped at **v=47** (14 selectable creation cards).
+  Next ship is **v=48**.
 - **GitHub (this chat, 2026-08-19):** https://github.com/Foodpapi/Avernus-Descent is live.
   Workspace has `.git` tracking `origin/main`. Shipped commit:
   **`65d5f03` — Add full game source through v=44**.
@@ -402,13 +402,20 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   radiant save. v=41 adds the same hover AoE circle (plus tile fill) the first cast uses.
   Engine: `recastMoonbeam` + `MOONBEAM_MOVE_TILES`; turn action `recast_moonbeam`; UI row +
   `drawAimOverlay` recast branch. Tests: `tools/moonbeam_test.mjs`.
-- **Not implemented yet:** Halfling Naturally Stealthy / wood-elf Mask of the Wild (races.js
-  doesn't have those feature texts). Hearing / Passive Perception contested hide (only visual LOS
-  spotting). Whole-floor darkness is still reduced vision, not full heavily-obscured vs
+- **PHB subraces (v=47):** Creation iterates `RACES` — 14 cards. Lightfoot keeps id `halfling` +
+  Naturally Stealthy; Stout (`stout_halfling`) has Lucky/Brave + poison resist, **no** NS. Hill
+  Dwarf (`dwarf`) Dwarven Toughness +1 HP/level; Mountain Dwarf +2 STR +2 CON + light/medium armor.
+  High Elf Fire Bolt (INT); Wood Elf Mask of the Wild; Drow vision 24, sunlight disad on
+  `mountain_pass/town/forest/fey/ship`, Faerie Fire @3 / Darkness @5 (CHA). Rock + Forest Gnome
+  both have Gnome Cunning. Combat uses `raceFlag` (not `raceId ===`) for Lucky/Brave/Gnome Cunning.
+  Brave = frightened saves only; poisonSaveAdv = poison CON saves only. Forest Gnome Natural
+  Illusionist is flavor-only (no `minor_illusion` spell). Skipped Variant Human / dragonborn colors
+  / SCAG variants. Tests: `tools/race_test.mjs`.
+- **Not implemented yet:** Drow dancing lights / Forest Gnome minor illusion (spells not in catalog).
+  Variant Human feat-at-1. Whole-floor darkness is still reduced vision, not full heavily-obscured vs
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
-  or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=47**.
+  or art drops. This session cannot push/PR — start a new coding session. Next cache stamp is **v=48**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -419,7 +426,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=46**. Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=47**. Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
