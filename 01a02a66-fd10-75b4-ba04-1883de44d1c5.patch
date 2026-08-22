@@ -1,0 +1,591 @@
+diff --git a/src/5e/combat_actions.js b/src/5e/combat_actions.js
+index 906b9ef..6b4bb0a 100644
+--- a/src/5e/combat_actions.js
++++ b/src/5e/combat_actions.js
+@@ -143,7 +143,7 @@ export function isProjectileSpell(sp) {
+   return false;
+ }
+ 
+-function rollProjectileSpellDamage(combat, caster, sp, upcast) {
++function rollProjectileSpellDamage(combat, caster, sp, upcast, opts = {}) {
+   if (sp.fx === 'magic_missile') {
+     const n = 3 + upcast;
+     let dmg = 0;
+@@ -165,7 +165,8 @@ function rollProjectileSpellDamage(combat, caster, sp, upcast) {
+     const dmgStr = typeof sp.dmg === 'string' ? upcastDmg(sp.dmg, upcast) : cantripDmg(sp, caster.char.level);
+     dmg = roll(combat.rng, dmgStr);
+   }
+-  return { dmg, type: sp.dmgType || 'force' };
++  const type = opts.element || sp.dmgType || 'force';
++  return { dmg, type };
+ }
+ 
+ export function applyObjectDamage(combat, x, y, amount, type, source, opts = {}) {
+@@ -1049,16 +1050,44 @@ export function castSpell(combat, caster, spellId, opts = {}) {
+   const result = { ok: true, dmg: 0 };
+ 
+   const getSaveMod = (target, ab) => target.char.stats ? mod(target.char.stats[ab]) : savingThrowMod(target.char, ab);
+-  const rollSave = (target, ab, adv) => {
++  const rollSave = (target, ab, adv, context = {}) => {
+     let s = d20(combat.rng);
+     if (target.char && hasFeat(target.char, 'lucky') && target.char.resources && target.char.resources.luck && target.char.resources.luck.cur > 0 && s <= 10) {
+       target.char.resources.luck.cur--;
+       s = Math.max(s, d20(combat.rng));
+     }
+-    const gnome = target.char.raceId === 'gnome' && ['INT', 'WIS', 'CHA'].includes(ab);
+-    const dwarf = target.char.raceId === 'dwarf' && ab === 'CON' && (target.char.stats && false); // only for PC saves
+-    const brave = target.char.raceId === 'halfling' && ab === 'WIS';
+-    if (gnome || brave || adv) s = Math.max(s, d20(combat.rng));
++    // Halfling Lucky for saves (reroll nat 1)
++    if (target.char && isRaceFamily(target.char, 'halfling') && s === 1) {
++      s = d20(combat.rng);
++    }
++    // Racial save advantages — 5e RAW:
++    // Dwarf: advantage on saves vs poison
++    // Stout Halfling: same as dwarf (poison)
++    // Gnome Cunning: advantage on INT/WIS/CHA saves vs magic
++    // Halfling Brave: advantage on saves vs frightened
++    // Elf/Half-Elf Fey Ancestry: advantage on saves vs charmed
++    // Tiefling Hellish Resistance is damage resistance, not save advantage (already handled)
++    const isDwarf = isRaceFamily(target.char, 'dwarf');
++    const isStout = target.char.raceId === 'stout_halfling';
++    const isGnome = isRaceFamily(target.char, 'gnome');
++    const isHalfling = isRaceFamily(target.char, 'halfling');
++    const isElf = isRaceFamily(target.char, 'elf') || isRaceFamily(target.char, 'halfelf');
++    let racialAdv = false;
++    if ((isDwarf || isStout) && (context.poison || ab === 'CON')) {
++      // Dwarven Resilience / Stout Resilience: advantage vs poison saves
++      racialAdv = true;
++    }
++    if (isGnome && ['INT', 'WIS', 'CHA'].includes(ab)) {
++      // Gnome Cunning: advantage vs magic (simplified: always for those abilities)
++      racialAdv = true;
++    }
++    if (isHalfling && context.frightened) {
++      racialAdv = true;
++    }
++    if (isElf && context.charmed) {
++      racialAdv = true;
++    }
++    if (racialAdv || adv) s = Math.max(s, d20(combat.rng));
+     const bane = getStatus(target, 'baned');
+     if (bane) s -= combat.rng.int(1, 4);
+     const blessed = target.char.buffs && target.char.buffs.find(b => b.id === 'bless');
+@@ -1473,22 +1502,31 @@ function resolveGenericSpell(combat, caster, sp, opts, targets, dc, atk, upcast,
+     if (sp.fx === 'scorching_ray') rays = 3 + upcast;
+     if (sp.fx === 'eldritch_blast') rays = c.char.level >= 17 ? 4 : c.char.level >= 11 ? 3 : c.char.level >= 5 ? 2 : 1;
+     let dmg = 0;
++    // Determine damage type — chromatic orb and dragon_breath allow choosing element
++    const chosenType = opts.element || sp.dmgType || 'force';
+     // per-ray damage: Eldritch Blast 1d10 force each, Scorching Ray 2d6 fire each
+     if (sp.fx === 'eldritch_blast') {
+       for (let i = 0; i < rays; i++) dmg += roll(combat.rng, '1d10');
+     } else if (sp.fx === 'scorching_ray') {
+       for (let i = 0; i < rays; i++) dmg += roll(combat.rng, '2d6');
+-    } else {
+-      dmg = roll(combat.rng, cantripDmg(sp, c.char.level));
++    } else if (sp.dmg) {
++      if (typeof sp.dmg === 'string') {
++        dmg = roll(combat.rng, upcastDmg(sp.dmg, upcast));
++      } else {
++        dmg = roll(combat.rng, cantripDmg(sp, c.char.level));
++      }
+     }
+     if (crit) {
+       // crits double ONE ray/die, not the whole volley
+       if (sp.fx === 'eldritch_blast') dmg += roll(combat.rng, '1d10');
+       else if (sp.fx === 'scorching_ray') dmg += roll(combat.rng, '2d6');
+-      else dmg += roll(combat.rng, cantripDmg(sp, c.char.level) || sp.dmg);
++      else if (sp.dmg) {
++        if (typeof sp.dmg === 'string') dmg += roll(combat.rng, upcastDmg(sp.dmg, upcast));
++        else dmg += roll(combat.rng, cantripDmg(sp, c.char.level) || sp.dmg);
++      }
+     }
+-    log(combat, `✨ ${c.name} hits ${u.name} with ${sp.name} for ${dmg} ${sp.dmgType || 'force'} damage${crit ? ' (CRIT!)' : ''}!`);
+-    result.dmg = applyDamage(combat, u, c, dmg, sp.dmgType || 'force', { magical: true }).dealt;
++    log(combat, `✨ ${c.name} hits ${u.name} with ${sp.name} for ${dmg} ${chosenType} damage${crit ? ' (CRIT!)' : ''}!`);
++    result.dmg = applyDamage(combat, u, c, dmg, chosenType, { magical: true }).dealt;
+     // Hex: per 5e it triggers on ANY attack that hits — spell attacks included.
+     // Eldritch Blast, Fire Bolt, etc. all deal the warlock's +1d6 necrotic to
+     // the cursed target, as a separate (delayed) damage event + popup.
+@@ -1851,9 +1889,12 @@ function resolveGenericSpell(combat, caster, sp, opts, targets, dc, atk, upcast,
+       return { ok: true };
+     }
+     case 'dragon_breath': {
+-      addStatus(u, 'dragon_breath', "Dragon's Breath", 10);
+-      log(combat, `🐲 ${u.name} gains a breath weapon!`);
+-      startConcentration(combat, c, sp.id, { target: u.id });
++      const elem = opts.element || 'fire';
++      const dmgDice = upcastDmg(sp.dmg || '3d6', upcast);
++      // Store chosen element, DC, and damage dice in status data for later breath uses
++      addStatus(u, 'dragon_breath', `Dragon's Breath (${elem})`, 10, { element: elem, dc, dmg: dmgDice });
++      log(combat, `🐲 ${u.name} gains a breath weapon! (${elem}, ${dmgDice})`);
++      startConcentration(combat, c, sp.id, { target: u.id, element: elem, dmg: dmgDice, dc });
+       return { ok: true };
+     }
+     case 'pass_without_trace': {
+diff --git a/src/5e/rules.js b/src/5e/rules.js
+index 55c4437..dbf75d3 100644
+--- a/src/5e/rules.js
++++ b/src/5e/rules.js
+@@ -117,6 +117,13 @@ export function applyRacialMagic(char) {
+   if (race.dragonType) char.dragonType = race.dragonType;
+   if (race.naturallyStealthy) char.naturallyStealthy = true;
+   if (race.maskOfTheWild) char.maskOfTheWild = true;
++  // Draconic Sorcerer: resistance matching ancestry. If the sorcerer is also dragonborn, use their draconic ancestry; otherwise default to fire (PHB default).
++  // This also sets draconicResist for damage resistance handling in applyDamage.
++  if (char.cls && char.cls.id === 'sorcerer' && char.subclassId === 'draconic') {
++    char.draconicResist = char.dragonType || 'fire';
++    // Ensure dragonType is at least set for audio/FX consistency
++    if (!char.dragonType) char.dragonType = char.draconicResist;
++  }
+ }
+ 
+ export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng, racialChoices = null }) {
+@@ -427,7 +434,9 @@ export function initSpellcasting(char) {
+   }
+   // slot tracking
+   if (char.cls.warlock) {
+-    char.pactSlots = pactSlotsAt(classLevel(char)).filter((v, i) => v > 0).map((count, i) => ({ level: i + 1, max: count }));
++    const raw = pactSlotsAt(classLevel(char));
++    char.pactSlots = [];
++    raw.forEach((count, idx) => { if (count > 0) char.pactSlots.push({ level: idx + 1, max: count }); });
+     char.pactSlotsUsed = 0;
+     char.spellSlots = [];
+     char.spellSlotsUsed = [];
+@@ -496,6 +505,11 @@ export function initResources(char) {
+   // racial once-per-floor
+   if (isRaceFamily(char, 'dragonborn')) char.resources.breathWeapon = { max: 1, cur: 1 };
+   if (isRaceFamily(char, 'half_orc')) char.resources.relentlessEndurance = { max: 1, cur: 1 };
++  // Draconic Sorcerer: ensure draconicResist is set (for resistance handling)
++  if (char.cls && char.cls.id === 'sorcerer' && char.subclassId === 'draconic') {
++    if (!char.draconicResist) char.draconicResist = char.dragonType || 'fire';
++    if (!char.dragonType) char.dragonType = char.draconicResist;
++  }
+   // multiclass resources
+   initMulticlassResources(char);
+   // feat resources
+@@ -596,7 +610,9 @@ export function initMulticlassResources(char) {
+ function mergeMulticlassSpellSlots(char, cls) {
+   if (cls.warlock) {
+     if (!char.pactSlots || !char.pactSlots.length) {
+-      char.pactSlots = pactSlotsAt(char.secondClass.level).filter((v, i) => v > 0).map((count, i) => ({ level: i + 1, max: count }));
++      const raw = pactSlotsAt(char.secondClass.level);
++      char.pactSlots = [];
++      raw.forEach((count, idx) => { if (count > 0) char.pactSlots.push({ level: idx + 1, max: count }); });
+       char.pactSlotsUsed = 0;
+     }
+     return;
+diff --git a/src/5e/turn.js b/src/5e/turn.js
+index 6faa2c0..eceeeda 100644
+--- a/src/5e/turn.js
++++ b/src/5e/turn.js
+@@ -1,15 +1,16 @@
+ // Turn executor: performs an action for the current unit (used by player UI
+ // and enemy AI alike), then advances the turn when the unit is done.
+ 
+-import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat } from './rules.js';
++import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat, savingThrowMod } from './rules.js';
+ import { OBSTACLES } from '../data/locations.js';
++import { isRaceFamily } from '../data/races.js';
+ import { applyMonsterAttackFx, wildShapeInto, revertWildShape, wildShapeAttack, recastHex, recastMoonbeam } from './combat_actions.js';
+ import { WEAPONS, FISTS, CONSUMABLES } from '../data/items.js';
+ import { SPELL_MAP, cantripDmg } from '../data/spells.js';
+ import {
+   unitAt, getStatus, addStatus, removeStatus, unitAc, findPath, isPassable, hasLOS, inBounds, elevationAt,
+   startOfTurnReset, currentUnit, alivePlayers, aliveEnemies, attackRoll,
+-  hasAction, hasBonus, spendAction, spendBonus, pushPopup,
++  hasAction, hasBonus, spendAction, spendBonus, pushPopup, pushFx,
+ } from './combat.js';
+ import {
+   log, moveUnit, weaponAttack, castSpell, useItem, applyDamage, healUnit, endTurn, skipTurn,
+@@ -268,7 +269,7 @@ export function performAction(combat, unitId, action) {
+       const dist = Math.max(Math.abs(u.x - target.x), Math.abs(u.y - target.y));
+       if (dist > 1) { log(combat, 'Target too far to shove.'); return; }
+       const dc = 8 + char.prof + Math.max(mod(char.abilities.STR), mod(char.abilities.DEX));
+-      const save = d20(rng) + (target.char.stats ? mod(target.char.stats.STR) : mod(target.char.abilities.STR) + (target.char.prof || 0));
++      const save = d20(rng) + (target.char.stats ? mod(target.char.stats.STR) : savingThrowMod(target.char, 'STR'));
+       Audio.play('combat/shove', { vol: 0.75 });
+       if (save < dc) { addStatus(target, 'prone', 'Prone', 1); Audio.play('combat/fall', { vol: 0.6, delay: 150 }); log(combat, `🛡 ${u.name} shield-shoves ${target.name} prone!`); }
+       else { log(combat, `${target.name} resists the shield shove.`); }
+@@ -601,23 +602,30 @@ export function useAbility(combat, u, abilityId, action) {
+     case 'mind_blast': {
+       if (!char.transformed || char.transformed.type !== 'mind_flayer') return;
+       const dir = action.direction || { dx: 1, dy: 0 };
+-      const dc = 8 + char.prof + Math.max(mod(char.abilities.INT), 4);
++      const dc = 8 + char.prof + mod(char.abilities.INT);
+       Audio.play('spells/psychic', { vol: 0.85 });
+       log(combat, `🧠 ${u.name} unleashes a Mind Blast!`);
++      const lineTiles = [];
+       for (let i = 1; i <= 3; i++) {
+         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
+         if (!inBounds(combat, x, y)) break;
+-        const e = unitAt(combat, x, y);
++        const t = combat.grid[y][x];
++        if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
++        lineTiles.push({ x, y });
++      }
++      for (const tile of lineTiles) {
++        const e = unitAt(combat, tile.x, tile.y);
+         if (!e) continue;
+-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : mod(e.char.abilities.INT) + (e.char.prof || 0));
++        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : savingThrowMod(e.char, 'INT'));
+         if (save < dc) {
+           addStatus(e, 'stunned', 'Stunned', 1);
+-          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { magical: true });
++          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true, magical: true });
+           log(combat, `${e.name} is stunned by the Mind Blast!`);
+         } else {
+-          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { magical: true });
++          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true, magical: true });
+         }
+       }
++      pushFx(combat, { type: 'line', tiles: lineTiles, color: '#f07ad8', dur: 420 });
+       break;
+     }
+     case 'natural_recovery': case 'arcane_recovery': {
+@@ -646,24 +654,65 @@ export function useAbility(combat, u, abilityId, action) {
+       if (!res.breathWeapon || res.breathWeapon.cur <= 0) { log(combat, 'Breath weapon used.'); Audio.play('ui/error', { vol: 0.5, throttle: 120 }); return; }
+       res.breathWeapon.cur--;
+       spendAction(u);
++      // Determine correct damage type from draconic ancestry (race) — 5e PHB:
++      // Black/Copper = acid, Blue/Bronze = lightning, Brass/Gold/Red = fire,
++      // Green = poison, Silver/White = cold. char.dragonType is set from
++      // RACES[].dragonType in applyRacialMagic(); fallback to fire for safety.
++      // If the character also has a draconic sorcerer ancestry (subclass),
++      // prefer the race's ancestry but allow sorcerer draconicResist as fallback.
++      const type = char.dragonType || char.draconicResist || 'fire';
+       Audio.play('units/roar', { vol: 0.8 });
+-      Audio.play(`spells/${char.dragonType || 'fire'}`, { vol: 0.75, delay: 120 });
++      Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
+       const dir = action.direction || { dx: 1, dy: 0 };
+       const dmgDice = char.level >= 16 ? '5d6' : char.level >= 11 ? '4d6' : char.level >= 6 ? '3d6' : '2d6';
+-      const type = char.dragonType || 'fire';
+-      const dc = char.spellSaveDC || (8 + char.prof + mod(char.abilities.CON));
+-      for (let i = 1; i <= 3; i++) {
+-        const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
++      // 5e RAW: Breath weapon DC = 8 + CON mod + proficiency bonus (always CON, never spellcasting ability)
++      const dc = 8 + char.prof + mod(char.abilities.CON);
++      // Proper 3-tile cone (not just a line) — matches coneTilesFor and drawConePreview
++      const size = 3;
++      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
++      const sx = u.x, sy = u.y;
++      const coneTiles = [];
++      for (let i = 1; i <= size; i++) {
++        const x = sx + dir.dx * i, y = sy + dir.dy * i;
+         if (!inBounds(combat, x, y)) break;
+         const t = combat.grid[y][x];
+         if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
+-        const e = unitAt(combat, x, y);
++        coneTiles.push({ x, y });
++        const width = Math.min(i, Math.floor(size / 2));
++        for (let w = 1; w <= width; w++) {
++          if (primary === 'x') {
++            if (inBounds(combat, x, y + w)) coneTiles.push({ x, y: y + w });
++            if (inBounds(combat, x, y - w)) coneTiles.push({ x, y: y - w });
++          } else {
++            if (inBounds(combat, x + w, y)) coneTiles.push({ x: x + w, y });
++            if (inBounds(combat, x - w, y)) coneTiles.push({ x: x - w, y });
++          }
++        }
++      }
++      // Deduplicate tiles (corners can overlap) and collect unique hit targets
++      const seen = new Set();
++      const hitTargets = [];
++      for (const t of coneTiles) {
++        const k = t.y * combat.w + t.x;
++        if (seen.has(k)) continue;
++        seen.add(k);
++        const e = unitAt(combat, t.x, t.y);
+         if (!e) continue;
++        if (e.id === u.id) continue;
++        if (hitTargets.find(h => h.id === e.id)) continue;
++        hitTargets.push(e);
++      }
++      for (const e of hitTargets) {
+         const dmg = roll(rng, dmgDice);
+-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + e.char.prof);
++        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
+         if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), type, { aoe: true, magical: true });
+         else applyDamage(combat, e, u, dmg, type, { aoe: true, magical: true });
+       }
++      // Visual cone flash
++      if (combat) {
++        const col = type === 'fire' ? '#ff7a2a' : type === 'cold' ? '#6ac2ff' : type === 'acid' ? '#7ae05a' : type === 'lightning' ? '#ffe83c' : type === 'poison' ? '#c87ae8' : '#ff7a2a';
++        pushFx(combat, { type: 'cone', tiles: coneTiles, color: col, dur: 420 });
++      }
+       log(combat, `🐉 ${u.name} exhales a blast of ${type}!`);
+       break;
+     }
+@@ -759,44 +808,81 @@ export function useMonsterPower(combat, u, powerId, action) {
+       Audio.play('units/roar', { vol: 0.85 });
+       Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
+       log(combat, `🔥 ${u.name} breathes a cone of ${type}!`);
++      // Proper cone for monsters too
++      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
++      const coneTiles = [];
+       for (let i = 1; i <= size; i++) {
+         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
+         if (!inBounds(combat, x, y)) break;
+         const t = combat.grid[y][x];
+         if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
+-        const e = unitAt(combat, x, y);
++        coneTiles.push({ x, y });
++        const width = Math.min(i, Math.floor(size / 2));
++        for (let w = 1; w <= width; w++) {
++          if (primary === 'x') {
++            if (inBounds(combat, x, y + w)) coneTiles.push({ x, y: y + w });
++            if (inBounds(combat, x, y - w)) coneTiles.push({ x, y: y - w });
++          } else {
++            if (inBounds(combat, x + w, y)) coneTiles.push({ x: x + w, y });
++            if (inBounds(combat, x - w, y)) coneTiles.push({ x: x - w, y });
++          }
++        }
++      }
++      const seenM = new Set();
++      const hitM = [];
++      for (const t of coneTiles) {
++        const k = t.y * combat.w + t.x;
++        if (seenM.has(k)) continue;
++        seenM.add(k);
++        const e = unitAt(combat, t.x, t.y);
+         if (!e) continue;
++        if (e.id === u.id) continue;
++        if (hitM.find(h => h.id === e.id)) continue;
++        hitM.push(e);
++      }
++      for (const e of hitM) {
+         const dmg = roll(rng, m.cr >= 10 ? '12d6' : '4d6');
+-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + (e.char.prof || 0));
++        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
+         if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), type, { aoe: true, magical: true });
+         else applyDamage(combat, e, u, dmg, type, { aoe: true, magical: true });
+       }
++      const colM = type === 'fire' ? '#ff7a2a' : type === 'acid' ? '#7ae05a' : '#ff7a2a';
++      pushFx(combat, { type: 'cone', tiles: coneTiles, color: colM, dur: 420 });
+       break;
+     }
+     case 'mind_blast': {
+       const dir = action.direction || { dx: Math.sign((targets[0] ? targets[0].x : 1) - u.x) || 1, dy: 0 };
+       Audio.play('spells/psychic', { vol: 0.85 });
+       log(combat, `🧠 ${u.name} unleashes a Mind Blast!`);
++      // Proper line but with correct save mod
++      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
++      const lineTiles = [];
+       for (let i = 1; i <= 3; i++) {
+         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
+         if (!inBounds(combat, x, y)) break;
+-        const e = unitAt(combat, x, y);
++        const t = combat.grid[y][x];
++        if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
++        lineTiles.push({ x, y });
++      }
++      for (const tile of lineTiles) {
++        const e = unitAt(combat, tile.x, tile.y);
+         if (!e) continue;
+-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : mod(e.char.abilities.INT) + (e.char.prof || 0));
++        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : savingThrowMod(e.char, 'INT'));
+         if (save < 15) {
+           addStatus(e, 'stunned', 'Stunned', 1);
+-          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true });
++          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true, magical: true });
+           log(combat, `${e.name} is stunned!`);
+         } else {
+-          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true });
++          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true, magical: true });
+         }
+       }
++      pushFx(combat, { type: 'line', tiles: lineTiles, color: '#f07ad8', dur: 420 });
+       break;
+     }
+     case 'petrifying_gaze': {
+       const t = targets.find(t => Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) <= 5 && hasLOS(combat, u.x, u.y, t.x, t.y));
+       if (t) {
+-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.CON) : mod(t.char.abilities.CON) + (t.char.prof || 0));
++        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.CON) : savingThrowMod(t.char, 'CON'));
+         if (save < 12) {
+           addStatus(t, 'stunned', 'Petrified', 2);
+           log(combat, `🗿 ${t.name} begins turning to stone!`);
+@@ -820,10 +906,10 @@ export function useMonsterPower(combat, u, powerId, action) {
+         const t = combat.rng.pick(targets);
+         if (!t) break;
+         const ray = combat.rng.pick(rays);
+-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats[ray.save]) : mod(t.char.abilities[ray.save]) + (t.char.prof || 0));
++        const save = d20(rng) + (t.char.stats ? mod(t.char.stats[ray.save]) : savingThrowMod(t.char, ray.save));
+         if (ray.dmg) {
+-          if (save >= ray.dc) { applyDamage(combat, t, u, Math.floor(roll(rng, ray.dmg) / 2), ray.type, { aoe: true }); log(combat, `${t.name} saves vs ${ray.name}.`); }
+-          else { applyDamage(combat, t, u, roll(rng, ray.dmg), ray.type, { aoe: true }); log(combat, `${t.name} is hit by the ${ray.name}!`); }
++          if (save >= ray.dc) { applyDamage(combat, t, u, Math.floor(roll(rng, ray.dmg) / 2), ray.type, { aoe: true, magical: true }); log(combat, `${t.name} saves vs ${ray.name}.`); }
++          else { applyDamage(combat, t, u, roll(rng, ray.dmg), ray.type, { aoe: true, magical: true }); log(combat, `${t.name} is hit by the ${ray.name}!`); }
+         } else if (save < ray.dc) {
+           if (ray.fx === 'charm') { addStatus(t, 'charmed', 'Charmed', 2); log(combat, `${t.name} is charmed!`); }
+           else if (ray.fx === 'paralyze') { addStatus(t, 'paralyzed', 'Paralyzed', 2); log(combat, `${t.name} is paralyzed!`); }
+@@ -843,9 +929,9 @@ export function useMonsterPower(combat, u, powerId, action) {
+         const d = Math.max(Math.abs(e.x - t.x), Math.abs(e.y - t.y));
+         if (d > 2) continue;
+         const dmg = roll(rng, '8d6');
+-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + (e.char.prof || 0));
+-        if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), 'fire', { aoe: true });
+-        else applyDamage(combat, e, u, dmg, 'fire', { aoe: true });
++        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
++        if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), 'fire', { aoe: true, magical: true });
++        else applyDamage(combat, e, u, dmg, 'fire', { aoe: true, magical: true });
+       }
+       break;
+     }
+@@ -854,7 +940,7 @@ export function useMonsterPower(combat, u, powerId, action) {
+       for (const t of targets) {
+         const d = Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y));
+         if (d > 6) continue;
+-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.WIS) : mod(t.char.abilities.WIS) + (t.char.prof || 0));
++        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.WIS) : savingThrowMod(t.char, 'WIS'));
+         if (save < 11) {
+           addStatus(t, 'charmed', 'Charmed', 2);
+           log(combat, `${t.name} is lured by the song!`);
+diff --git a/src/data/classes.js b/src/data/classes.js
+index c0e9b41..4ad0d08 100644
+--- a/src/data/classes.js
++++ b/src/data/classes.js
+@@ -28,13 +28,13 @@ export const HALF_CASTER_SLOTS = {
+ };
+ 
+ export const WARLOCK_SLOTS = {
+-  1: [1, 1], 2: [2, 1], 3: [0, 2, 2], 4: [0, 2, 2], 5: [0, 0, 2, 3], 6: [0, 0, 2, 3],
+-  7: [0, 0, 0, 2, 4], 8: [0, 0, 0, 2, 4], 9: [0, 0, 0, 0, 2, 5], 10: [0, 0, 0, 0, 2, 5],
+-  11: [0, 0, 0, 0, 0, 3, 5], 12: [0, 0, 0, 0, 0, 3, 5], 13: [0, 0, 0, 0, 0, 0, 3, 5],
+-  14: [0, 0, 0, 0, 0, 0, 3, 5], 15: [0, 0, 0, 0, 0, 0, 0, 3, 5],
+-  16: [0, 0, 0, 0, 0, 0, 0, 3, 5], 17: [0, 0, 0, 0, 0, 0, 0, 4, 5],
+-  18: [0, 0, 0, 0, 0, 0, 0, 4, 5], 19: [0, 0, 0, 0, 0, 0, 0, 4, 5],
+-  20: [0, 0, 0, 0, 0, 0, 0, 4, 5],
++  1: [1], 2: [2], 3: [0, 2], 4: [0, 2], 5: [0, 0, 2], 6: [0, 0, 2],
++  7: [0, 0, 0, 2], 8: [0, 0, 0, 2], 9: [0, 0, 0, 0, 2], 10: [0, 0, 0, 0, 2],
++  11: [0, 0, 0, 0, 3], 12: [0, 0, 0, 0, 3], 13: [0, 0, 0, 0, 3],
++  14: [0, 0, 0, 0, 3], 15: [0, 0, 0, 0, 3],
++  16: [0, 0, 0, 0, 3], 17: [0, 0, 0, 0, 4],
++  18: [0, 0, 0, 0, 4], 19: [0, 0, 0, 0, 4],
++  20: [0, 0, 0, 0, 4],
+ };
+ 
+ export const SPELL_LEVEL_NAMES = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+@@ -112,7 +112,7 @@ export const CLASSES = [
+     id: 'druid', name: 'Druid', hitDie: 8, spellAbility: 'WIS', fullCaster: true,
+     saves: ['INT', 'WIS'],
+     armor: ['light', 'medium', 'shields'], weapons: ['simple'], skills: 2,
+-    skillChoices: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Survival'],
++    skillChoices: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
+     desc: 'A priest of the old faith, wielding the powers of nature and wild beasts.',
+     features: {
+       1: ['Druidic Spellcasting'],
+diff --git a/src/data/spells.js b/src/data/spells.js
+index c5c1f3d..2fc6aea 100644
+--- a/src/data/spells.js
++++ b/src/data/spells.js
+@@ -176,7 +176,8 @@ export const SPELLS = [
+     desc: 'Your next weapon hit deals +2d6 radiant and marks the target with light: attacks vs it have advantage.' },
+   { id: 'dragon_breath', name: "Dragon's Breath", level: 2, school: 'Transmutation', castTime: 'bonus', range: 1, mode: 'ally', fx: 'dragon_breath',
+     concentration: true, classes: ['sorcerer', 'wizard'],
+-    desc: 'An ally gains a 3-tile cone breath weapon (3d6 elemental) usable each round (concentration).' },
++    dmg: '3d6', dmgType: 'fire', chooseType: ['acid', 'cold', 'fire', 'lightning', 'poison'], save: 'DEX', halfOnSave: true, coneSize: 3,
++    desc: 'An ally gains a 3-tile cone breath weapon (3d6 elemental, your choice) usable each round (concentration). +1d6 per level above 2nd.' },
+   { id: 'darkness', name: 'Darkness', level: 2, school: 'Evocation', castTime: 'action', range: 6, mode: 'aoe', aoeRadius: 2, fx: 'darkness',
+     concentration: true, classes: ['sorcerer', 'warlock', 'wizard'],
+     desc: 'Magical darkness fills the area: attacks into or out of it have disadvantage, and it cannot be seen through.' },
+diff --git a/tools/breath_test.mjs b/tools/breath_test.mjs
+new file mode 100644
+index 0000000..ab2b84e
+--- /dev/null
++++ b/tools/breath_test.mjs
+@@ -0,0 +1,93 @@
++#!/usr/bin/env node
++import { makeRng } from '../src/rng.js';
++import { createCharacter } from '../src/5e/rules.js';
++import { generateCombatMap, spawnEncounter, currentUnit, aliveEnemies, unitAt, makeUnit } from '../src/5e/combat.js';
++import { performAction } from '../src/5e/turn.js';
++import { LOCATION_MAP } from '../src/data/locations.js';
++import { RACE_MAP } from '../src/data/races.js';
++import { CLASS_MAP } from '../src/data/classes.js';
++
++const rng = makeRng(12345);
++
++// Test all dragonborn ancestries
++const ancestries = [
++  'dragonborn',
++  'dragonborn_black',
++  'dragonborn_blue',
++  'dragonborn_brass',
++  'dragonborn_bronze',
++  'dragonborn_copper',
++  'dragonborn_gold',
++  'dragonborn_green',
++  'dragonborn_silver',
++  'dragonborn_white',
++];
++
++for (const raceId of ancestries) {
++  const race = RACE_MAP[raceId];
++  console.log(`\n=== Testing ${race.name} (${raceId}) dragonType=${race.dragonType} resist=${race.resist} ===`);
++  const cls = CLASS_MAP['fighter'];
++  const hero = createCharacter({
++    raceId,
++    classId: 'fighter',
++    name: 'TestDragon',
++    subclassId: 'champion',
++    scoreAssign: { STR: 15, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
++    level: 1,
++    hero: true,
++    rng,
++  });
++  console.log(`  char.dragonType=${hero.dragonType} char.race.dragonType=${hero.race.dragonType} char.race.resist=${hero.race.resist}`);
++  console.log(`  resources:`, hero.resources);
++
++  // Setup combat
++  const loc = LOCATION_MAP['tavern'];
++  const combat = generateCombatMap(loc, 1, rng, {});
++  // Spawn hero unit at 2,2
++  const u = makeUnit(hero, 'player', 2, 5);
++  u.vision = 12;
++  combat.units = [u];
++  // Add enemy at 3 tiles ahead: 5,5
++  const { createCharacter: cc } = await import('../src/5e/rules.js');
++  const enemyRace = RACE_MAP['human'];
++  const enemyCls = CLASS_MAP['fighter'];
++  const enemyChar = cc({
++    raceId: 'human',
++    classId: 'fighter',
++    name: 'Goblin',
++    subclassId: 'champion',
++    scoreAssign: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
++    level: 1,
++    hero: false,
++    rng,
++  });
++  enemyChar.stats = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
++  enemyChar.ac = 10;
++  enemyChar.maxHp = 20;
++  enemyChar.hp = 20;
++  const { makeUnit: mu } = await import('../src/5e/combat.js');
++  const enemyUnit = mu(enemyChar, 'enemy', 5, 5);
++  enemyUnit.maxHp = 20;
++  enemyUnit.hp = 20;
++  combat.units.push(enemyUnit);
++  combat.order = [u.id, enemyUnit.id];
++  combat.turnIndex = 0;
++  combat.round = 1;
++  combat.log = [];
++  combat.rng = rng;
++  combat.w = 18; combat.h = 12;
++  // Ensure grid exists and is passable
++  // Try breath weapon
++  console.log(`  Enemy HP before: ${enemyUnit.hp}`);
++  const dir = { dx: 1, dy: 0 };
++  performAction(combat, u.id, { type: 'ability', ability: 'breath_weapon', direction: dir });
++  console.log(`  Enemy HP after breath (dir 1,0): ${enemyUnit.hp} dead=${enemyUnit.dead}`);
++  console.log(`  Combat log:`, combat.log.slice(-5));
++  if (enemyUnit.hp === 20) {
++    console.log(`  *** BUG: No damage dealt! ***`);
++  } else {
++    console.log(`  Damage dealt: ${20 - enemyUnit.hp} type=${hero.dragonType}`);
++  }
++}
++
++console.log("\nDone");

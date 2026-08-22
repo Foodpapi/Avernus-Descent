@@ -143,7 +143,7 @@ export function isProjectileSpell(sp) {
   return false;
 }
 
-function rollProjectileSpellDamage(combat, caster, sp, upcast) {
+function rollProjectileSpellDamage(combat, caster, sp, upcast, opts = {}) {
   if (sp.fx === 'magic_missile') {
     const n = 3 + upcast;
     let dmg = 0;
@@ -165,7 +165,8 @@ function rollProjectileSpellDamage(combat, caster, sp, upcast) {
     const dmgStr = typeof sp.dmg === 'string' ? upcastDmg(sp.dmg, upcast) : cantripDmg(sp, caster.char.level);
     dmg = roll(combat.rng, dmgStr);
   }
-  return { dmg, type: sp.dmgType || 'force' };
+  const type = opts.element || sp.dmgType || 'force';
+  return { dmg, type };
 }
 
 export function applyObjectDamage(combat, x, y, amount, type, source, opts = {}) {
@@ -1049,16 +1050,44 @@ export function castSpell(combat, caster, spellId, opts = {}) {
   const result = { ok: true, dmg: 0 };
 
   const getSaveMod = (target, ab) => target.char.stats ? mod(target.char.stats[ab]) : savingThrowMod(target.char, ab);
-  const rollSave = (target, ab, adv) => {
+  const rollSave = (target, ab, adv, context = {}) => {
     let s = d20(combat.rng);
     if (target.char && hasFeat(target.char, 'lucky') && target.char.resources && target.char.resources.luck && target.char.resources.luck.cur > 0 && s <= 10) {
       target.char.resources.luck.cur--;
       s = Math.max(s, d20(combat.rng));
     }
-    const gnome = target.char.raceId === 'gnome' && ['INT', 'WIS', 'CHA'].includes(ab);
-    const dwarf = target.char.raceId === 'dwarf' && ab === 'CON' && (target.char.stats && false); // only for PC saves
-    const brave = target.char.raceId === 'halfling' && ab === 'WIS';
-    if (gnome || brave || adv) s = Math.max(s, d20(combat.rng));
+    // Halfling Lucky for saves (reroll nat 1)
+    if (target.char && isRaceFamily(target.char, 'halfling') && s === 1) {
+      s = d20(combat.rng);
+    }
+    // Racial save advantages — 5e RAW:
+    // Dwarf: advantage on saves vs poison
+    // Stout Halfling: same as dwarf (poison)
+    // Gnome Cunning: advantage on INT/WIS/CHA saves vs magic
+    // Halfling Brave: advantage on saves vs frightened
+    // Elf/Half-Elf Fey Ancestry: advantage on saves vs charmed
+    // Tiefling Hellish Resistance is damage resistance, not save advantage (already handled)
+    const isDwarf = isRaceFamily(target.char, 'dwarf');
+    const isStout = target.char.raceId === 'stout_halfling';
+    const isGnome = isRaceFamily(target.char, 'gnome');
+    const isHalfling = isRaceFamily(target.char, 'halfling');
+    const isElf = isRaceFamily(target.char, 'elf') || isRaceFamily(target.char, 'halfelf');
+    let racialAdv = false;
+    if ((isDwarf || isStout) && (context.poison || ab === 'CON')) {
+      // Dwarven Resilience / Stout Resilience: advantage vs poison saves
+      racialAdv = true;
+    }
+    if (isGnome && ['INT', 'WIS', 'CHA'].includes(ab)) {
+      // Gnome Cunning: advantage vs magic (simplified: always for those abilities)
+      racialAdv = true;
+    }
+    if (isHalfling && context.frightened) {
+      racialAdv = true;
+    }
+    if (isElf && context.charmed) {
+      racialAdv = true;
+    }
+    if (racialAdv || adv) s = Math.max(s, d20(combat.rng));
     const bane = getStatus(target, 'baned');
     if (bane) s -= combat.rng.int(1, 4);
     const blessed = target.char.buffs && target.char.buffs.find(b => b.id === 'bless');
@@ -1473,22 +1502,31 @@ function resolveGenericSpell(combat, caster, sp, opts, targets, dc, atk, upcast,
     if (sp.fx === 'scorching_ray') rays = 3 + upcast;
     if (sp.fx === 'eldritch_blast') rays = c.char.level >= 17 ? 4 : c.char.level >= 11 ? 3 : c.char.level >= 5 ? 2 : 1;
     let dmg = 0;
+    // Determine damage type — chromatic orb and dragon_breath allow choosing element
+    const chosenType = opts.element || sp.dmgType || 'force';
     // per-ray damage: Eldritch Blast 1d10 force each, Scorching Ray 2d6 fire each
     if (sp.fx === 'eldritch_blast') {
       for (let i = 0; i < rays; i++) dmg += roll(combat.rng, '1d10');
     } else if (sp.fx === 'scorching_ray') {
       for (let i = 0; i < rays; i++) dmg += roll(combat.rng, '2d6');
-    } else {
-      dmg = roll(combat.rng, cantripDmg(sp, c.char.level));
+    } else if (sp.dmg) {
+      if (typeof sp.dmg === 'string') {
+        dmg = roll(combat.rng, upcastDmg(sp.dmg, upcast));
+      } else {
+        dmg = roll(combat.rng, cantripDmg(sp, c.char.level));
+      }
     }
     if (crit) {
       // crits double ONE ray/die, not the whole volley
       if (sp.fx === 'eldritch_blast') dmg += roll(combat.rng, '1d10');
       else if (sp.fx === 'scorching_ray') dmg += roll(combat.rng, '2d6');
-      else dmg += roll(combat.rng, cantripDmg(sp, c.char.level) || sp.dmg);
+      else if (sp.dmg) {
+        if (typeof sp.dmg === 'string') dmg += roll(combat.rng, upcastDmg(sp.dmg, upcast));
+        else dmg += roll(combat.rng, cantripDmg(sp, c.char.level) || sp.dmg);
+      }
     }
-    log(combat, `✨ ${c.name} hits ${u.name} with ${sp.name} for ${dmg} ${sp.dmgType || 'force'} damage${crit ? ' (CRIT!)' : ''}!`);
-    result.dmg = applyDamage(combat, u, c, dmg, sp.dmgType || 'force', { magical: true }).dealt;
+    log(combat, `✨ ${c.name} hits ${u.name} with ${sp.name} for ${dmg} ${chosenType} damage${crit ? ' (CRIT!)' : ''}!`);
+    result.dmg = applyDamage(combat, u, c, dmg, chosenType, { magical: true }).dealt;
     // Hex: per 5e it triggers on ANY attack that hits — spell attacks included.
     // Eldritch Blast, Fire Bolt, etc. all deal the warlock's +1d6 necrotic to
     // the cursed target, as a separate (delayed) damage event + popup.
@@ -1851,9 +1889,12 @@ function resolveGenericSpell(combat, caster, sp, opts, targets, dc, atk, upcast,
       return { ok: true };
     }
     case 'dragon_breath': {
-      addStatus(u, 'dragon_breath', "Dragon's Breath", 10);
-      log(combat, `🐲 ${u.name} gains a breath weapon!`);
-      startConcentration(combat, c, sp.id, { target: u.id });
+      const elem = opts.element || 'fire';
+      const dmgDice = upcastDmg(sp.dmg || '3d6', upcast);
+      // Store chosen element, DC, and damage dice in status data for later breath uses
+      addStatus(u, 'dragon_breath', `Dragon's Breath (${elem})`, 10, { element: elem, dc, dmg: dmgDice });
+      log(combat, `🐲 ${u.name} gains a breath weapon! (${elem}, ${dmgDice})`);
+      startConcentration(combat, c, sp.id, { target: u.id, element: elem, dmg: dmgDice, dc });
       return { ok: true };
     }
     case 'pass_without_trace': {

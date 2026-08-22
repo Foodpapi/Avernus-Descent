@@ -1,15 +1,16 @@
 // Turn executor: performs an action for the current unit (used by player UI
 // and enemy AI alike), then advances the turn when the unit is done.
 
-import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat } from './rules.js';
+import { mod, computeSpeed, highestSpellLevel, wildShapeFormsFor, townMod, changeGearChar, hasFeat, savingThrowMod } from './rules.js';
 import { OBSTACLES } from '../data/locations.js';
+import { isRaceFamily } from '../data/races.js';
 import { applyMonsterAttackFx, wildShapeInto, revertWildShape, wildShapeAttack, recastHex, recastMoonbeam } from './combat_actions.js';
 import { WEAPONS, FISTS, CONSUMABLES } from '../data/items.js';
 import { SPELL_MAP, cantripDmg } from '../data/spells.js';
 import {
   unitAt, getStatus, addStatus, removeStatus, unitAc, findPath, isPassable, hasLOS, inBounds, elevationAt,
   startOfTurnReset, currentUnit, alivePlayers, aliveEnemies, attackRoll,
-  hasAction, hasBonus, spendAction, spendBonus, pushPopup,
+  hasAction, hasBonus, spendAction, spendBonus, pushPopup, pushFx,
 } from './combat.js';
 import {
   log, moveUnit, weaponAttack, castSpell, useItem, applyDamage, healUnit, endTurn, skipTurn,
@@ -268,7 +269,7 @@ export function performAction(combat, unitId, action) {
       const dist = Math.max(Math.abs(u.x - target.x), Math.abs(u.y - target.y));
       if (dist > 1) { log(combat, 'Target too far to shove.'); return; }
       const dc = 8 + char.prof + Math.max(mod(char.abilities.STR), mod(char.abilities.DEX));
-      const save = d20(rng) + (target.char.stats ? mod(target.char.stats.STR) : mod(target.char.abilities.STR) + (target.char.prof || 0));
+      const save = d20(rng) + (target.char.stats ? mod(target.char.stats.STR) : savingThrowMod(target.char, 'STR'));
       Audio.play('combat/shove', { vol: 0.75 });
       if (save < dc) { addStatus(target, 'prone', 'Prone', 1); Audio.play('combat/fall', { vol: 0.6, delay: 150 }); log(combat, `🛡 ${u.name} shield-shoves ${target.name} prone!`); }
       else { log(combat, `${target.name} resists the shield shove.`); }
@@ -601,23 +602,30 @@ export function useAbility(combat, u, abilityId, action) {
     case 'mind_blast': {
       if (!char.transformed || char.transformed.type !== 'mind_flayer') return;
       const dir = action.direction || { dx: 1, dy: 0 };
-      const dc = 8 + char.prof + Math.max(mod(char.abilities.INT), 4);
+      const dc = 8 + char.prof + mod(char.abilities.INT);
       Audio.play('spells/psychic', { vol: 0.85 });
       log(combat, `🧠 ${u.name} unleashes a Mind Blast!`);
+      const lineTiles = [];
       for (let i = 1; i <= 3; i++) {
         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
         if (!inBounds(combat, x, y)) break;
-        const e = unitAt(combat, x, y);
+        const t = combat.grid[y][x];
+        if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
+        lineTiles.push({ x, y });
+      }
+      for (const tile of lineTiles) {
+        const e = unitAt(combat, tile.x, tile.y);
         if (!e) continue;
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : mod(e.char.abilities.INT) + (e.char.prof || 0));
+        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : savingThrowMod(e.char, 'INT'));
         if (save < dc) {
           addStatus(e, 'stunned', 'Stunned', 1);
-          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { magical: true });
+          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true, magical: true });
           log(combat, `${e.name} is stunned by the Mind Blast!`);
         } else {
-          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { magical: true });
+          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true, magical: true });
         }
       }
+      pushFx(combat, { type: 'line', tiles: lineTiles, color: '#f07ad8', dur: 420 });
       break;
     }
     case 'natural_recovery': case 'arcane_recovery': {
@@ -646,23 +654,64 @@ export function useAbility(combat, u, abilityId, action) {
       if (!res.breathWeapon || res.breathWeapon.cur <= 0) { log(combat, 'Breath weapon used.'); Audio.play('ui/error', { vol: 0.5, throttle: 120 }); return; }
       res.breathWeapon.cur--;
       spendAction(u);
+      // Determine correct damage type from draconic ancestry (race) — 5e PHB:
+      // Black/Copper = acid, Blue/Bronze = lightning, Brass/Gold/Red = fire,
+      // Green = poison, Silver/White = cold. char.dragonType is set from
+      // RACES[].dragonType in applyRacialMagic(); fallback to fire for safety.
+      // If the character also has a draconic sorcerer ancestry (subclass),
+      // prefer the race's ancestry but allow sorcerer draconicResist as fallback.
+      const type = char.dragonType || char.draconicResist || 'fire';
       Audio.play('units/roar', { vol: 0.8 });
-      Audio.play(`spells/${char.dragonType || 'fire'}`, { vol: 0.75, delay: 120 });
+      Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
       const dir = action.direction || { dx: 1, dy: 0 };
       const dmgDice = char.level >= 16 ? '5d6' : char.level >= 11 ? '4d6' : char.level >= 6 ? '3d6' : '2d6';
-      const type = char.dragonType || 'fire';
-      const dc = char.spellSaveDC || (8 + char.prof + mod(char.abilities.CON));
-      for (let i = 1; i <= 3; i++) {
-        const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
+      // 5e RAW: Breath weapon DC = 8 + CON mod + proficiency bonus (always CON, never spellcasting ability)
+      const dc = 8 + char.prof + mod(char.abilities.CON);
+      // Proper 3-tile cone (not just a line) — matches coneTilesFor and drawConePreview
+      const size = 3;
+      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
+      const sx = u.x, sy = u.y;
+      const coneTiles = [];
+      for (let i = 1; i <= size; i++) {
+        const x = sx + dir.dx * i, y = sy + dir.dy * i;
         if (!inBounds(combat, x, y)) break;
         const t = combat.grid[y][x];
         if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
-        const e = unitAt(combat, x, y);
+        coneTiles.push({ x, y });
+        const width = Math.min(i, Math.floor(size / 2));
+        for (let w = 1; w <= width; w++) {
+          if (primary === 'x') {
+            if (inBounds(combat, x, y + w)) coneTiles.push({ x, y: y + w });
+            if (inBounds(combat, x, y - w)) coneTiles.push({ x, y: y - w });
+          } else {
+            if (inBounds(combat, x + w, y)) coneTiles.push({ x: x + w, y });
+            if (inBounds(combat, x - w, y)) coneTiles.push({ x: x - w, y });
+          }
+        }
+      }
+      // Deduplicate tiles (corners can overlap) and collect unique hit targets
+      const seen = new Set();
+      const hitTargets = [];
+      for (const t of coneTiles) {
+        const k = t.y * combat.w + t.x;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        const e = unitAt(combat, t.x, t.y);
         if (!e) continue;
+        if (e.id === u.id) continue;
+        if (hitTargets.find(h => h.id === e.id)) continue;
+        hitTargets.push(e);
+      }
+      for (const e of hitTargets) {
         const dmg = roll(rng, dmgDice);
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + e.char.prof);
+        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
         if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), type, { aoe: true, magical: true });
         else applyDamage(combat, e, u, dmg, type, { aoe: true, magical: true });
+      }
+      // Visual cone flash
+      if (combat) {
+        const col = type === 'fire' ? '#ff7a2a' : type === 'cold' ? '#6ac2ff' : type === 'acid' ? '#7ae05a' : type === 'lightning' ? '#ffe83c' : type === 'poison' ? '#c87ae8' : '#ff7a2a';
+        pushFx(combat, { type: 'cone', tiles: coneTiles, color: col, dur: 420 });
       }
       log(combat, `🐉 ${u.name} exhales a blast of ${type}!`);
       break;
@@ -759,44 +808,81 @@ export function useMonsterPower(combat, u, powerId, action) {
       Audio.play('units/roar', { vol: 0.85 });
       Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
       log(combat, `🔥 ${u.name} breathes a cone of ${type}!`);
+      // Proper cone for monsters too
+      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
+      const coneTiles = [];
       for (let i = 1; i <= size; i++) {
         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
         if (!inBounds(combat, x, y)) break;
         const t = combat.grid[y][x];
         if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
-        const e = unitAt(combat, x, y);
+        coneTiles.push({ x, y });
+        const width = Math.min(i, Math.floor(size / 2));
+        for (let w = 1; w <= width; w++) {
+          if (primary === 'x') {
+            if (inBounds(combat, x, y + w)) coneTiles.push({ x, y: y + w });
+            if (inBounds(combat, x, y - w)) coneTiles.push({ x, y: y - w });
+          } else {
+            if (inBounds(combat, x + w, y)) coneTiles.push({ x: x + w, y });
+            if (inBounds(combat, x - w, y)) coneTiles.push({ x: x - w, y });
+          }
+        }
+      }
+      const seenM = new Set();
+      const hitM = [];
+      for (const t of coneTiles) {
+        const k = t.y * combat.w + t.x;
+        if (seenM.has(k)) continue;
+        seenM.add(k);
+        const e = unitAt(combat, t.x, t.y);
         if (!e) continue;
+        if (e.id === u.id) continue;
+        if (hitM.find(h => h.id === e.id)) continue;
+        hitM.push(e);
+      }
+      for (const e of hitM) {
         const dmg = roll(rng, m.cr >= 10 ? '12d6' : '4d6');
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + (e.char.prof || 0));
+        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
         if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), type, { aoe: true, magical: true });
         else applyDamage(combat, e, u, dmg, type, { aoe: true, magical: true });
       }
+      const colM = type === 'fire' ? '#ff7a2a' : type === 'acid' ? '#7ae05a' : '#ff7a2a';
+      pushFx(combat, { type: 'cone', tiles: coneTiles, color: colM, dur: 420 });
       break;
     }
     case 'mind_blast': {
       const dir = action.direction || { dx: Math.sign((targets[0] ? targets[0].x : 1) - u.x) || 1, dy: 0 };
       Audio.play('spells/psychic', { vol: 0.85 });
       log(combat, `🧠 ${u.name} unleashes a Mind Blast!`);
+      // Proper line but with correct save mod
+      const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
+      const lineTiles = [];
       for (let i = 1; i <= 3; i++) {
         const x = u.x + dir.dx * i, y = u.y + dir.dy * i;
         if (!inBounds(combat, x, y)) break;
-        const e = unitAt(combat, x, y);
+        const t = combat.grid[y][x];
+        if (t.obstacle) { const ob = OBSTACLES[t.obstacle]; if (ob && ob.tall) break; }
+        lineTiles.push({ x, y });
+      }
+      for (const tile of lineTiles) {
+        const e = unitAt(combat, tile.x, tile.y);
         if (!e) continue;
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : mod(e.char.abilities.INT) + (e.char.prof || 0));
+        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.INT) : savingThrowMod(e.char, 'INT'));
         if (save < 15) {
           addStatus(e, 'stunned', 'Stunned', 1);
-          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true });
+          applyDamage(combat, e, u, roll(rng, '4d8'), 'psychic', { aoe: true, magical: true });
           log(combat, `${e.name} is stunned!`);
         } else {
-          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true });
+          applyDamage(combat, e, u, Math.floor(roll(rng, '4d8') / 2), 'psychic', { aoe: true, magical: true });
         }
       }
+      pushFx(combat, { type: 'line', tiles: lineTiles, color: '#f07ad8', dur: 420 });
       break;
     }
     case 'petrifying_gaze': {
       const t = targets.find(t => Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) <= 5 && hasLOS(combat, u.x, u.y, t.x, t.y));
       if (t) {
-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.CON) : mod(t.char.abilities.CON) + (t.char.prof || 0));
+        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.CON) : savingThrowMod(t.char, 'CON'));
         if (save < 12) {
           addStatus(t, 'stunned', 'Petrified', 2);
           log(combat, `🗿 ${t.name} begins turning to stone!`);
@@ -820,10 +906,10 @@ export function useMonsterPower(combat, u, powerId, action) {
         const t = combat.rng.pick(targets);
         if (!t) break;
         const ray = combat.rng.pick(rays);
-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats[ray.save]) : mod(t.char.abilities[ray.save]) + (t.char.prof || 0));
+        const save = d20(rng) + (t.char.stats ? mod(t.char.stats[ray.save]) : savingThrowMod(t.char, ray.save));
         if (ray.dmg) {
-          if (save >= ray.dc) { applyDamage(combat, t, u, Math.floor(roll(rng, ray.dmg) / 2), ray.type, { aoe: true }); log(combat, `${t.name} saves vs ${ray.name}.`); }
-          else { applyDamage(combat, t, u, roll(rng, ray.dmg), ray.type, { aoe: true }); log(combat, `${t.name} is hit by the ${ray.name}!`); }
+          if (save >= ray.dc) { applyDamage(combat, t, u, Math.floor(roll(rng, ray.dmg) / 2), ray.type, { aoe: true, magical: true }); log(combat, `${t.name} saves vs ${ray.name}.`); }
+          else { applyDamage(combat, t, u, roll(rng, ray.dmg), ray.type, { aoe: true, magical: true }); log(combat, `${t.name} is hit by the ${ray.name}!`); }
         } else if (save < ray.dc) {
           if (ray.fx === 'charm') { addStatus(t, 'charmed', 'Charmed', 2); log(combat, `${t.name} is charmed!`); }
           else if (ray.fx === 'paralyze') { addStatus(t, 'paralyzed', 'Paralyzed', 2); log(combat, `${t.name} is paralyzed!`); }
@@ -843,9 +929,9 @@ export function useMonsterPower(combat, u, powerId, action) {
         const d = Math.max(Math.abs(e.x - t.x), Math.abs(e.y - t.y));
         if (d > 2) continue;
         const dmg = roll(rng, '8d6');
-        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : mod(e.char.abilities.DEX) + (e.char.prof || 0));
-        if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), 'fire', { aoe: true });
-        else applyDamage(combat, e, u, dmg, 'fire', { aoe: true });
+        const save = d20(rng) + (e.char.stats ? mod(e.char.stats.DEX) : savingThrowMod(e.char, 'DEX'));
+        if (save >= dc) applyDamage(combat, e, u, Math.floor(dmg / 2), 'fire', { aoe: true, magical: true });
+        else applyDamage(combat, e, u, dmg, 'fire', { aoe: true, magical: true });
       }
       break;
     }
@@ -854,7 +940,7 @@ export function useMonsterPower(combat, u, powerId, action) {
       for (const t of targets) {
         const d = Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y));
         if (d > 6) continue;
-        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.WIS) : mod(t.char.abilities.WIS) + (t.char.prof || 0));
+        const save = d20(rng) + (t.char.stats ? mod(t.char.stats.WIS) : savingThrowMod(t.char, 'WIS'));
         if (save < 11) {
           addStatus(t, 'charmed', 'Charmed', 2);
           log(combat, `${t.name} is lured by the song!`);

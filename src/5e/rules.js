@@ -117,6 +117,13 @@ export function applyRacialMagic(char) {
   if (race.dragonType) char.dragonType = race.dragonType;
   if (race.naturallyStealthy) char.naturallyStealthy = true;
   if (race.maskOfTheWild) char.maskOfTheWild = true;
+  // Draconic Sorcerer: resistance matching ancestry. If the sorcerer is also dragonborn, use their draconic ancestry; otherwise default to fire (PHB default).
+  // This also sets draconicResist for damage resistance handling in applyDamage.
+  if (char.cls && char.cls.id === 'sorcerer' && char.subclassId === 'draconic') {
+    char.draconicResist = char.dragonType || 'fire';
+    // Ensure dragonType is at least set for audio/FX consistency
+    if (!char.dragonType) char.dragonType = char.draconicResist;
+  }
 }
 
 export function createCharacter({ raceId, classId, name, subclassId, scoreAssign, level = 1, hero = false, rng, racialChoices = null }) {
@@ -427,7 +434,9 @@ export function initSpellcasting(char) {
   }
   // slot tracking
   if (char.cls.warlock) {
-    char.pactSlots = pactSlotsAt(classLevel(char)).filter((v, i) => v > 0).map((count, i) => ({ level: i + 1, max: count }));
+    const raw = pactSlotsAt(classLevel(char));
+    char.pactSlots = [];
+    raw.forEach((count, idx) => { if (count > 0) char.pactSlots.push({ level: idx + 1, max: count }); });
     char.pactSlotsUsed = 0;
     char.spellSlots = [];
     char.spellSlotsUsed = [];
@@ -496,6 +505,11 @@ export function initResources(char) {
   // racial once-per-floor
   if (isRaceFamily(char, 'dragonborn')) char.resources.breathWeapon = { max: 1, cur: 1 };
   if (isRaceFamily(char, 'half_orc')) char.resources.relentlessEndurance = { max: 1, cur: 1 };
+  // Draconic Sorcerer: ensure draconicResist is set (for resistance handling)
+  if (char.cls && char.cls.id === 'sorcerer' && char.subclassId === 'draconic') {
+    if (!char.draconicResist) char.draconicResist = char.dragonType || 'fire';
+    if (!char.dragonType) char.dragonType = char.draconicResist;
+  }
   // multiclass resources
   initMulticlassResources(char);
   // feat resources
@@ -596,7 +610,9 @@ export function initMulticlassResources(char) {
 function mergeMulticlassSpellSlots(char, cls) {
   if (cls.warlock) {
     if (!char.pactSlots || !char.pactSlots.length) {
-      char.pactSlots = pactSlotsAt(char.secondClass.level).filter((v, i) => v > 0).map((count, i) => ({ level: i + 1, max: count }));
+      const raw = pactSlotsAt(char.secondClass.level);
+      char.pactSlots = [];
+      raw.forEach((count, idx) => { if (count > 0) char.pactSlots.push({ level: idx + 1, max: count }); });
       char.pactSlotsUsed = 0;
     }
     return;

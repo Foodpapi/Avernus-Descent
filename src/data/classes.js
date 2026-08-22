@@ -28,13 +28,13 @@ export const HALF_CASTER_SLOTS = {
 };
 
 export const WARLOCK_SLOTS = {
-  1: [1, 1], 2: [2, 1], 3: [0, 2, 2], 4: [0, 2, 2], 5: [0, 0, 2, 3], 6: [0, 0, 2, 3],
-  7: [0, 0, 0, 2, 4], 8: [0, 0, 0, 2, 4], 9: [0, 0, 0, 0, 2, 5], 10: [0, 0, 0, 0, 2, 5],
-  11: [0, 0, 0, 0, 0, 3, 5], 12: [0, 0, 0, 0, 0, 3, 5], 13: [0, 0, 0, 0, 0, 0, 3, 5],
-  14: [0, 0, 0, 0, 0, 0, 3, 5], 15: [0, 0, 0, 0, 0, 0, 0, 3, 5],
-  16: [0, 0, 0, 0, 0, 0, 0, 3, 5], 17: [0, 0, 0, 0, 0, 0, 0, 4, 5],
-  18: [0, 0, 0, 0, 0, 0, 0, 4, 5], 19: [0, 0, 0, 0, 0, 0, 0, 4, 5],
-  20: [0, 0, 0, 0, 0, 0, 0, 4, 5],
+  1: [1], 2: [2], 3: [0, 2], 4: [0, 2], 5: [0, 0, 2], 6: [0, 0, 2],
+  7: [0, 0, 0, 2], 8: [0, 0, 0, 2], 9: [0, 0, 0, 0, 2], 10: [0, 0, 0, 0, 2],
+  11: [0, 0, 0, 0, 3], 12: [0, 0, 0, 0, 3], 13: [0, 0, 0, 0, 3],
+  14: [0, 0, 0, 0, 3], 15: [0, 0, 0, 0, 3],
+  16: [0, 0, 0, 0, 3], 17: [0, 0, 0, 0, 4],
+  18: [0, 0, 0, 0, 4], 19: [0, 0, 0, 0, 4],
+  20: [0, 0, 0, 0, 4],
 };
 
 export const SPELL_LEVEL_NAMES = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
@@ -112,7 +112,7 @@ export const CLASSES = [
     id: 'druid', name: 'Druid', hitDie: 8, spellAbility: 'WIS', fullCaster: true,
     saves: ['INT', 'WIS'],
     armor: ['light', 'medium', 'shields'], weapons: ['simple'], skills: 2,
-    skillChoices: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Survival'],
+    skillChoices: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
     desc: 'A priest of the old faith, wielding the powers of nature and wild beasts.',
     features: {
       1: ['Druidic Spellcasting'],
