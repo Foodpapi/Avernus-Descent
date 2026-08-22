@@ -170,7 +170,55 @@ try {
 ok(!threw, 'every engine call no-ops without throwing in node (no window/AudioContext)');
 ok(!Audio.muted(), 'toggleMute twice returns to unmuted');
 
-// ---- 7. Manifest generation matches the registry ----
+// ---- 7. Music requested at boot (before the first gesture) must still play ----
+// Regression: titleScreen() → screen('title') → setScene('title') runs at boot,
+// BEFORE the AudioContext exists (created on the first user gesture). The old
+// code called ctx.decodeAudioData with ctx === null, caught the TypeError and
+// cached assets/sounds/music/title.mp3 as "missing" forever — so the title
+// track was silently dead even after the user clicked. SFX worked because they
+// are all triggered post-gesture.
+section('Music at boot → plays after first gesture');
+const fakeDecoded = [];
+const fakeStarted = [];
+class FakeGain {
+  constructor() {
+    this.gain = { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, cancelScheduledValues() {} };
+  }
+  connect() {}
+  disconnect() {}
+}
+class FakeSrc {
+  constructor() { this.buffer = null; this.loop = false; this.playbackRate = { value: 1 }; this.onended = null; }
+  connect(n) { return n; }
+  start() { fakeStarted.push(true); }
+  stop() {}
+}
+class FakeCtx {
+  constructor() { this.currentTime = 0; this.destination = {}; this.state = 'suspended'; }
+  createGain() { return new FakeGain(); }
+  createBufferSource() { return new FakeSrc(); }
+  resume() { this.state = 'running'; }
+  decodeAudioData(ab) { fakeDecoded.push(ab); return Promise.resolve({ fake: true }); }
+}
+globalThis.window = { AudioContext: FakeCtx };
+globalThis.fetch = async (url) => {
+  const s = String(url);
+  if (s.endsWith('music/title.mp3')) return { ok: true, arrayBuffer: async () => new ArrayBuffer(16) };
+  return { ok: false, arrayBuffer: async () => new ArrayBuffer(0) };
+};
+globalThis.window.fetch = globalThis.fetch;
+Audio.init();                           // boot (main.js) — no gesture yet
+Audio.setScene('title', null, false);   // titleScreen() — music requested early
+await new Promise(r => setTimeout(r, 40));
+ok(fakeDecoded.length === 0 && fakeStarted.length === 0, 'no playback before the first gesture (autoplay policy)');
+Audio.unlock();                         // first pointerdown/keydown
+await new Promise(r => setTimeout(r, 40));
+ok(fakeDecoded.length === 1, 'title buffer decodes after unlock — NOT cached as missing');
+ok(fakeStarted.length === 1, 'title music starts after unlock');
+delete globalThis.window;
+delete globalThis.fetch;
+
+// ---- 8. Manifest generation matches the registry ----
 section('Manifest generation');
 try {
   execSync('node tools/gen_sound_manifest.js', { cwd: root, stdio: 'pipe' });
@@ -189,7 +237,7 @@ try {
   console.error('   manifest generation failed:', e.message);
 }
 
-// ---- 8. Location data still intact (no accidental regressions) ----
+// ---- 9. Location data still intact (no accidental regressions) ----
 section('Data counts unchanged');
 ok(LOCATIONS.length === 9, `9 locations (${LOCATIONS.length})`);
 ok(Object.keys(WEAPONS).length >= 32, `weapons table intact (${Object.keys(WEAPONS).length})`);

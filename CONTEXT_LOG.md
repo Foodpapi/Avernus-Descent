@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-22 (v=49 per-subrace race skin support)
+**Last updated:** 2026-08-22 (v=50 title-music boot fix)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=49"></script>` (**currently v=49** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=50"></script>` (**currently v=50** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -165,7 +165,10 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
     `spellCast`, `grunt()` (grunt_1-3 random). `unlock()` (first gesture), `init()`,
     `muted()/toggleMute()/setVolume()/getVolume()`, `preloadCommon(screen, locId, isBoss)`,
     `slotCount()`. Prefs in `localStorage['avernus_audio']`; defaults master 0.9 / sfx 0.8 /
-    music 0.5 / ambience 0.4. FADE_MS = 1.1.
+    music 0.5 / ambience 0.4. FADE_MS = 1.1. **Boot-order fix (v=50):** `resolveFile` waits on
+    `waitForCtx()` before `ctx.decodeAudioData` — tracks/sounds fetched before the first user
+    gesture (e.g. `setScene('title')` at boot) no longer throw on a null `ctx` and get
+    permanently 404-cached as missing; `unlock()` flushes the waiters via `notifyCtxReady()`.
 - `src/render/`:
   - `sprites.js` — `TILE_SIZE=28`, `SPRITE_W=20`, `SPRITE_H=24`; `UNIT_DISP_W = {tiny:18,
     small:21, medium:24, large:31, huge:35}`; `UNIT_ART_MAX_H` (18→1.6, 21→1.7, 24→1.8, 31→2.1,
@@ -290,7 +293,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=49 → next is v=50.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=50 → next is v=51.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -352,7 +355,19 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 
 ## 10. Current State / Next Steps
 
-- **Where we are:** Per-subrace race skin support at **v=49**.
+- **Where we are:** **v=50** — title music boot fix (root cause in section 3 audio.js note).
+  The user dropped `assets/sounds/music/title.mp3`; SFX played but the title track stayed
+  silent. Cause: `titleScreen()` → `screen('title')` → `Audio.setScene('title')` runs at boot,
+  BEFORE the AudioContext exists (it is created on the first gesture). The old
+  `resolveFile` called `ctx.decodeAudioData(ab)` with `ctx === null`, the TypeError was caught
+  and `music/title.mp3` was added to the `missing` set forever; the loop never retried after
+  `unlock()`. SFX "worked" because they are all triggered after the first gesture. Fix: decode
+  now awaits `waitForCtx()` and `unlock()` flushes waiters; `tools/sounds_test.mjs` section 7
+  regression-tests boot-before-gesture → decode+start after unlock (26 suites + headless green).
+  Also flagged by `check_sounds.mjs`: `music/title2.mp3` is an **orphan** (no `music/title2`
+  slot) — user likely dropped a second copy; play it by renaming to `title.mp3`, otherwise
+  ignore/delete. Other orphan spell files: `chilling_touch` (slot is `chill_touch`),
+  `hex uncut` (space in name), `thornwhip` (`thorn_whip`), `thunderclap` (no slot).
 - **Race skins v=49 (loading priority):** `unitAssetPaths` in `src/render/assets.js` now tries,
   in order, for a player character: (1) `units/race_{family}_{subrace}_{class}.png` (per-subrace
   skin, only when the lineage differs from the family), (2) `units/race_{family}_{class}.png`
@@ -419,7 +434,7 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=50**.
+  stamp is **v=51**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
@@ -430,11 +445,11 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=49** (per-subrace race skin support). Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=50** (title-music boot fix). Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update (now v=49 per-subrace race skins) is newer than that commit.
+This handoff log update (now v=50 title-music boot fix) is newer than that commit.
 
 Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
