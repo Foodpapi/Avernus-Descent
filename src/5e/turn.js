@@ -651,22 +651,28 @@ export function useAbility(combat, u, abilityId, action) {
       break;
     }
     case 'breath_weapon': {
-      if (!res.breathWeapon || res.breathWeapon.cur <= 0) { log(combat, 'Breath weapon used.'); Audio.play('ui/error', { vol: 0.5, throttle: 120 }); return; }
-      res.breathWeapon.cur--;
+      // Dragon's Breath (the spell) is reusable each round while its status is
+      // active. Prefer it over a racial breath so casting the spell never burns
+      // the dragonborn's once-per-floor resource.
+      const borrowedBreath = getStatus(u, 'dragon_breath');
+      const racialBreath = res.breathWeapon;
+      if (!borrowedBreath && (!racialBreath || racialBreath.cur <= 0)) {
+        log(combat, 'Breath weapon used.');
+        Audio.play('ui/error', { vol: 0.5, throttle: 120 });
+        return;
+      }
+      if (!borrowedBreath) racialBreath.cur--;
       spendAction(u);
-      // Determine correct damage type from draconic ancestry (race) — 5e PHB:
-      // Black/Copper = acid, Blue/Bronze = lightning, Brass/Gold/Red = fire,
-      // Green = poison, Silver/White = cold. char.dragonType is set from
-      // RACES[].dragonType in applyRacialMagic(); fallback to fire for safety.
-      // If the character also has a draconic sorcerer ancestry (subclass),
-      // prefer the race's ancestry but allow sorcerer draconicResist as fallback.
-      const type = char.dragonType || char.draconicResist || 'fire';
+      const breathData = borrowedBreath && borrowedBreath.data && typeof borrowedBreath.data === 'object'
+        ? borrowedBreath.data : {};
+      // Racial breath uses CON; the spell uses the original caster's spell DC
+      // saved in its status data, as specified by Dragon's Breath.
+      const type = breathData.element || char.dragonType || char.draconicResist || 'fire';
+      const dmgDice = breathData.dmg || (char.level >= 16 ? '5d6' : char.level >= 11 ? '4d6' : char.level >= 6 ? '3d6' : '2d6');
+      const dc = Number.isFinite(breathData.dc) ? breathData.dc : 8 + char.prof + mod(char.abilities.CON);
       Audio.play('units/roar', { vol: 0.8 });
       Audio.play(`spells/${type}`, { vol: 0.75, delay: 120 });
       const dir = action.direction || { dx: 1, dy: 0 };
-      const dmgDice = char.level >= 16 ? '5d6' : char.level >= 11 ? '4d6' : char.level >= 6 ? '3d6' : '2d6';
-      // 5e RAW: Breath weapon DC = 8 + CON mod + proficiency bonus (always CON, never spellcasting ability)
-      const dc = 8 + char.prof + mod(char.abilities.CON);
       // Proper 3-tile cone (not just a line) — matches coneTilesFor and drawConePreview
       const size = 3;
       const primary = Math.abs(dir.dx) >= Math.abs(dir.dy) ? 'x' : 'y';
@@ -730,7 +736,7 @@ export function useAbility(combat, u, abilityId, action) {
       // find a usable slot (lowest first)
       let smiteLevel = 0;
       if (char.cls.warlock) {
-        if (char.pactSlotsUsed < char.pactSlots.length) { char.pactSlotsUsed++; smiteLevel = highestSpellLevel(char); }
+        if (char.pactSlotsUsed < char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0)) { char.pactSlotsUsed++; smiteLevel = highestSpellLevel(char); }
       } else {
         for (let i = 0; i < char.spellSlots.length; i++) {
           if (char.spellSlots[i] > (char.spellSlotsUsed[i] || 0)) { char.spellSlotsUsed[i]++; smiteLevel = i + 1; break; }

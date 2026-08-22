@@ -84,6 +84,10 @@ const warlock = createCharacter({ raceId: RACES[0].id, classId: 'warlock', name:
 
 // ============ 2. TURN EXECUTOR: bonus point spent, blocked at 0 ============
 {
+  // The previous engine section intentionally consumed this shared test
+  // character's pact slot. Reset it so this section independently verifies the
+  // turn executor rather than accidentally testing slot exhaustion.
+  warlock.pactSlotsUsed = 0;
   const u = Combat.makeUnit(warlock, 'player', 5, 5);
   const victimA = Combat.makeUnit(createCharacter({ raceId: RACES[0].id, classId: 'fighter', name: 'A2', subclassId: 'champion', scoreAssign: Run.autoAssignScores(CLASS_MAP.fighter, RACES[0], rng), level: 1, hero: false, rng }), 'enemy', 6, 5);
   const victimB = Combat.makeUnit(createCharacter({ raceId: RACES[0].id, classId: 'fighter', name: 'B2', subclassId: 'champion', scoreAssign: Run.autoAssignScores(CLASS_MAP.fighter, RACES[0], rng), level: 1, hero: false, rng }), 'enemy', 8, 5);
@@ -214,6 +218,10 @@ const warlock = createCharacter({ raceId: RACES[0].id, classId: 'warlock', name:
   enemy.x = 6; enemy.y = 5;
   heroU.bonusPoints = 1; heroU.actionPoints = 1;
   performAction(combat, heroU.id, { type: 'cast', spellId: 'hex', targetId: enemy.id }); // target ALIVE
+  // Keep a regular bonus spell available so this UI assertion can open the
+  // spellbook; Hex itself remains concentrated on a living target.
+  hero.pactSlotsUsed = 0;
+  heroU.bonusPoints = 1;
 
   radialBtn('Bonus Actions').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   radialBtn('Bonus Spells').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));

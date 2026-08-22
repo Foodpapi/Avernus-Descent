@@ -1003,7 +1003,7 @@ export function castSpell(combat, caster, spellId, opts = {}) {
   if (sp.level > 0 && !opts.scroll) {
     const freeAvail = !!(char.featCasts && char.featCasts[spellId]);
     if (char.cls.warlock) {
-      if (char.pactSlotsUsed < char.pactSlots.length) char.pactSlotsUsed++;
+      if (char.pactSlotsUsed < char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0)) char.pactSlotsUsed++;
       else if (freeAvail) {
         char.featCasts[spellId] = false;
         log(combat, `🎖 ${caster.name} casts ${sp.name} through their feat (no slot spent).`);
@@ -2053,6 +2053,13 @@ export function endConcentration(combat, caster, quiet) {
       if (conc.data && conc.data.target) {
         const t = combat.units.find(u => u.id === conc.data.target);
         if (t) removeStatus(t, 'invisible');
+      }
+      break;
+    }
+    case 'dragon_breath': {
+      if (conc.data && conc.data.target) {
+        const t = combat.units.find(u => u.id === conc.data.target);
+        if (t) removeStatus(t, 'dragon_breath');
       }
       break;
     }

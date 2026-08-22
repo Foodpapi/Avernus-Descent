@@ -1489,7 +1489,7 @@ function getAbilities(u) {
   if (char.cls.id === 'fighter') { add('second_wind', res.secondWind && res.secondWind.cur > 0 && Combat.hasBonus(u)); }
   if (char.cls.id === 'monk' && res.ki && res.ki.cur > 0) { add('flurry', Combat.hasBonus(u)); add('patient_defense', Combat.hasBonus(u)); add('step_of_wind', Combat.hasBonus(u)); }
   if (char.cls.id === 'paladin') { add('lay_on_hands', res.layOnHands && res.layOnHands.cur > 0); add('channel_divinity', res.channelDivinity && res.channelDivinity.cur > 0); }
-  if (char.cls.id === 'paladin' && Combat.hasAction(u) && (char.cls.warlock ? char.pactSlotsUsed < char.pactSlots.length : char.spellSlots.some((s, i) => s > (char.spellSlotsUsed[i] || 0)))) add('divine_smite');
+  if (char.cls.id === 'paladin' && Combat.hasAction(u) && (char.cls.warlock ? char.pactSlotsUsed < char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0) : char.spellSlots.some((s, i) => s > (char.spellSlotsUsed[i] || 0)))) add('divine_smite');
   if (char.cls.id === 'cleric' && res.channelDivinity && res.channelDivinity.cur > 0) add('channel_divinity');
   if (char.cls.id === 'bard') add('bardic_inspiration', res.bardicInspiration && res.bardicInspiration.cur > 0 && Combat.hasBonus(u));
   if (char.cls.id === 'druid') {
@@ -2259,6 +2259,53 @@ function updateHud() {
 }
 
 let enemyTimer = null;
+// Player movement is intentionally paced tile-by-tile so hazards, opportunity
+// attacks, and each square crossed remain legible. Engine movement is already
+// step-aware; this only sequences the player-facing combat UI.
+let playerMoveTimer = null;
+const PLAYER_MOVE_STEP_MS = 150;
+
+function finishPlayerMove() {
+  playerMoveTimer = null;
+  const combat = G.combat;
+  if (!CS || !combat) return;
+  if (combat.over) { combatEnded(); return; }
+  CS.mode = 'idle';
+  CS.pending = null;
+  computeReachable();
+  updateHud();
+  render();
+  openRadial('root');
+}
+
+function animatePlayerMove(u, path) {
+  if (!path || !path.length || playerMoveTimer || !CS) return;
+  closeRadial();
+  CS.mode = 'moving'; // ignores new map clicks until the selected path finishes
+  CS.pending = null;
+  CS.hoverPath = null;
+  let index = 0;
+  const takeStep = () => {
+    const combat = G.combat;
+    const current = combat && Combat.currentUnit(combat);
+    if (!combat || combat.over || u.dead || !current || current.id !== u.id || index >= path.length || u.moveRemaining <= 0) {
+      finishPlayerMove();
+      return;
+    }
+    // Passing one tile at a time preserves all engine checks on every square:
+    // difficult terrain, grease/brambles, hidden-state checks, and enemy OAs.
+    performAction(combat, u.id, { type: 'move', path: [path[index]] });
+    index++;
+    afterPlayerAction();
+    if (combat.over || u.dead || index >= path.length || u.moveRemaining <= 0) {
+      finishPlayerMove();
+      return;
+    }
+    playerMoveTimer = setTimeout(takeStep, PLAYER_MOVE_STEP_MS);
+  };
+  // Let the player see the first square before moving, rather than snapping.
+  playerMoveTimer = setTimeout(takeStep, PLAYER_MOVE_STEP_MS);
+}
 
 // Reaction modal: pauses the enemy turn until the player chooses.
 function showReactionModal(prompts) {
@@ -2402,6 +2449,7 @@ function runEnemyTurns() {
 }
 
 function combatEnded() {
+  if (playerMoveTimer) { clearTimeout(playerMoveTimer); playerMoveTimer = null; }
   if (enemyTimer) { clearTimeout(enemyTimer); enemyTimer = null; }
   closeRadial();
   const combat = G.combat;
@@ -3927,11 +3975,7 @@ export function handleCombatTileClick(tx, ty, button) {
         const key = ty * combat.w + tx;
         if (cs.reachable.has(key)) {
           const res = Combat.findPath(combat, u, tx, ty, u.moveRemaining);
-          if (res) {
-            performAction(combat, u.id, { type: 'move', path: res.path });
-            cs.hoverPath = null;
-            afterPlayerAction();
-          }
+          if (res && res.path.length) animatePlayerMove(u, res.path);
         }
       }
       break;

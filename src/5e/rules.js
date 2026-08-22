@@ -609,7 +609,7 @@ export function initMulticlassResources(char) {
 
 function mergeMulticlassSpellSlots(char, cls) {
   if (cls.warlock) {
-    if (!char.pactSlots || !char.pactSlots.length) {
+    if (!char.pactSlots || !char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0)) {
       const raw = pactSlotsAt(char.secondClass.level);
       char.pactSlots = [];
       raw.forEach((count, idx) => { if (count > 0) char.pactSlots.push({ level: idx + 1, max: count }); });
@@ -841,7 +841,7 @@ export function canCastSpell(char, spellId) {
   if (char.featCasts && char.featCasts[spellId]) return true;
   if (sp.level === 0) return true;
   if (char.cls.warlock) {
-    if (char.pactSlotsUsed >= char.pactSlots.length) return false;
+    if (char.pactSlotsUsed >= char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0)) return false;
     return highestSpellLevel(char) >= sp.level;
   }
   if (!char.spellSlots || char.spellSlots.length < sp.level) return false;
@@ -856,7 +856,7 @@ export function spellSlotSummary(char) {
   if (char.cls.warlock) {
     const lvl = highestSpellLevel(char);
     const used = char.pactSlotsUsed;
-    const max = char.pactSlots.length;
+    const max = char.pactSlots.reduce((total, slot) => total + (slot.max || 0), 0);
     return lvl ? `${max - used}/${max} × ${ord(lvl)}` : '—';
   }
   const parts = [];

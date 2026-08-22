@@ -1,5 +1,5 @@
 # AVERNUS DESCENT — PROJECT CONTEXT LOG
-**Last updated:** 2026-08-22 (v=50 title-music boot fix)
+**Last updated:** 2026-08-22 (v=53 paced combat movement)
 **Purpose:** This file is the complete hand-off document for continuing development.
 A new chat can restore full context by reading this file (it lives in the workspace at
 `/home/user/avernus-descent/CONTEXT_LOG.md`). Keep it updated at the end of every workstream.
@@ -43,7 +43,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 
 ## 3. Architecture (exact file map)
 
-- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=50"></script>` (**currently v=50** — bump each ship).
+- `index.html` — only file with version stamp; `<script type="module" src="src/main.js?v=53"></script>` (**currently v=53** — bump each ship).
 - `style.css` — theme + `#sound-toggle` (mute button, fixed top-right, M key).
 - `tools/serve.js` — static server on port 8080, binds 0.0.0.0, sends `Cache-Control: no-store,
   no-cache, must-revalidate`; MIME map includes `.ogg/.mp3/.wav/.m4a/.flac` audio types (added in
@@ -293,7 +293,7 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 2. Run the **full battery** (below) — all must exit 0. Reinstall jsdom first if the suites fail
    with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'` → `npm install jsdom@24 --no-audit
    --no-fund` (jsdom does NOT persist across turns; this is expected nearly every turn).
-3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=50 → next is v=51.
+3. Bump `index.html` version stamp (`?v=N` → `?v=N+1`). Currently v=53 → next is v=54.
 4. `node tools/build.js` (regenerates dist/; it also runs a 40-battle headless sim).
 5. Restart server if dead (server processes do NOT persist across turns): use the process tool,
    cwd `/home/user/avernus-descent`, command `node tools/serve.js`, port 8080. Kill old:
@@ -302,10 +302,10 @@ preview and reports bugs with exact details (tile coordinates, spells, classes).
 6. Verify: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/index.html` → 200.
 7. Reply with root-cause + "what changed" bullets + **hard-refresh (Ctrl+Shift+R)** reminder.
 
-### Full test battery (27 suites)
+### Full test battery (28 suites)
 ```bash
 cd /home/user/avernus-descent
-fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "27 suites: $fails failures · headless exit $hc"
+fails=0; for t in meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test sounds_test moonbeam_test projectile_test hide_test breath_test; do node tools/$t.mjs >/tmp/t_out.txt 2>&1; c=$?; if [ $c -ne 0 ]; then fails=$((fails+1)); echo "FAIL $t"; grep -v "scrollTo\|not-implemented\|at \|module.exports" /tmp/t_out.txt | tail -4; fi; done; node tools/headless.js >/tmp/h_out.txt 2>&1; hc=$?; echo "28 suites: $fails failures · headless exit $hc"
 ```
 (jsdom suites print harmless `window.scrollTo` not-implemented warnings — ignore those; only exit
 codes matter. Do NOT run suites through `headless.js` — that file is its own suite.)
@@ -434,25 +434,39 @@ codes matter. Do NOT run suites through `headless.js` — that file is its own s
   non-darkvision.
 - **Expected next requests:** play-test bugs (exact tile coords / spells / classes), polish, sound
   or art drops, or class features for rogue/ranger. Follow the ritual + conventions. Next cache
-  stamp is **v=51**.
+  stamp is **v=54**.
 - **When the user drops sound files:** run `node tools/check_sounds.mjs` to confirm coverage;
   remind them to hard-refresh so the 404 cache clears.
 - **End of every workstream:** update THIS file (date + version bump + what changed), then ship.
   If they want GitHub updated too, commit + push (Contents write PAT; never commit secrets).
+
+## 10.1 Reliability pass — v=52 (2026-08-22)
+
+- **Root cause found:** the Breath Weapon update corrected `WARLOCK_SLOTS` into the natural 5e shape (one entry per spell level), but existing consumers treated `pactSlots.length` as the number of slots. A level-1 warlock therefore had the correct one slot by coincidence while higher-level warlocks could incorrectly receive only one cast. All slot availability, spending, smite, and UI checks now total the slots’ `max` values instead.
+- **Dragon’s Breath is now usable:** its concentration-backed status exposes the same cone action to any affected creature, is reusable each round without consuming a dragonborn’s racial breath, uses the casting spell’s stored DC/damage/element, and is removed immediately when concentration ends. The racial breath remains once per floor and uses its CON-based RAW DC.
+- **Test health:** repaired the Hex regression test’s shared, exhausted pact-slot fixture so `npm test` is green again. The default test script now executes every checked-in regression suite, including art/loading/LOS/projectiles/moonbeam and Breath Weapon.
+- **Cache stamp:** `index.html` now requests `src/main.js?v=52`; hard-refresh after deploying.
+
+## 10.2 Paced combat movement — v=53 (2026-08-22)
+
+- Player-directed movement during combat is now queued as **one tile every 150 ms** instead of applying the full clicked path immediately. Each square visibly resolves its movement cost, footstep, hazard effects (including grease/prone), hidden-state reveal, and opportunity attack before the next begins.
+- The input state is locked as `moving` while the path resolves, then returns to the normal action radial. Combat-ending state clears the pending movement timer.
+- Teleport spells (including **Misty Step**) still use their normal immediate teleport behavior; only standard walking is paced.
+- Cache stamp is now **v=53**.
 
 ## 11. How to Resume in a New Chat
 
 Start a new conversation and say something like:
 
 "Continue Avernus Descent at `/home/user/avernus-descent`. Read CONTEXT_LOG.md first.
-Latest shipped work is **v=50** (title-music boot fix). Stay ready for the next play-test bug or polish request."
+Latest shipped work is **v=53** (paced combat movement). Stay ready for the next play-test bug or polish request."
 
 The workspace (including this file and `.git`) persists across chats. GitHub
 https://github.com/Foodpapi/Avernus-Descent `main` is at `65d5f03` (full game through v=44).
-This handoff log update (now v=50 title-music boot fix) is newer than that commit.
+This handoff log update (now v=53 paced combat movement) is newer than that commit.
 
-Battery (27): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
+Battery (28): `meta_test dom_test flow_test inspect_test radial_test economy_test spellbook_test
 popup_test reaction_test campfire_test features_test console_test fixes_test spellfx_test
 gear_test walk_test sheetclick_test feats_test asset_test loading_test layering_test hex_test
-sounds_test moonbeam_test projectile_test hide_test` + `headless.js`.
+sounds_test moonbeam_test projectile_test hide_test breath_test` + `headless.js`.
  `headless.js`.
